@@ -1,6 +1,6 @@
 # Arivu Foods Inventory System
 
-Version: 0.7.2
+Version: 0.7.3
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
 
@@ -34,6 +34,7 @@ This repository contains initial scripts to set up the inventory database and a 
 - **Removed:** legacy `sqlscema.md` file
 - **New:** Static routes serve HTML pages (`register.html`, `arivu_Dashboard.html`,
   etc.) directly from root to fix 404s after login
+- **New:** `/warehouse-stock` endpoint lists main warehouse inventory and dashboard form allows adding batches
 
 ## Quick Start
 1. Install dependencies: `pip install -r requirements.txt`
@@ -133,6 +134,21 @@ Fetch retail partners via cURL:
 curl -u <user>:<pass> http://localhost:8000/retail-partners
 ```
 
+Create a batch via cURL:
+
+```bash
+curl -X POST http://localhost:8000/batches \
+     -H 'Content-Type: application/json' \
+     -u <user>:<pass> \
+     -d '{"batch_id":"B1","product_id":"AFCMA1KG","date_manufactured":"2024-01-01","quantity_produced":100}'
+```
+
+Fetch warehouse stock via cURL:
+
+```bash
+curl -u <user>:<pass> http://localhost:8000/warehouse-stock
+```
+
 Create a store partner account via cURL:
 
 ```bash
@@ -155,4 +171,4 @@ curl -u <user>:<pass> http://localhost:8000/arivu_Dashboard.html
 ```
 
 ## Project Status
-Version 0.7.2 adds combined store partner account creation. Run `python init_db.py` if you haven't created the database yet, then `uvicorn main:app --reload` to start the server.
+Version 0.7.3 introduces warehouse inventory management with a new `/warehouse-stock` API and batch creation form on the dashboard. Run `python init_db.py` if you haven't created the database yet, then `uvicorn main:app --reload` to start the server.

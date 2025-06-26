@@ -28,6 +28,7 @@ from services import (
     get_expiring_units_count,
     get_recent_movements,
     get_recent_sales,
+    get_warehouse_stock,
     get_store_current_stock,
     get_store_sales_today,
     add_new_batch_to_inventory,
@@ -380,6 +381,20 @@ def recent_sales(limit: int = 5, db: Session = Depends(get_db)):
             "sale_date": s.sale_date.isoformat() if s.sale_date else None,
         }
         for s in sales
+    ]
+
+
+@app.get("/warehouse-stock", dependencies=[auth_dep])
+def warehouse_stock(warehouse_id: str = "MAIN_WH", db: Session = Depends(get_db)):
+    """Return current stock records for a warehouse."""
+    stock = get_warehouse_stock(db, warehouse_id)
+    return [
+        {
+            "product_id": s.product_id,
+            "batch_id": s.batch_id,
+            "quantity": s.quantity,
+        }
+        for s in stock
     ]
 
 
