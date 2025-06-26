@@ -81,6 +81,29 @@
         <p class="text-muted mt-3">Showing 3 of X products.</p>
     </div>
 
+    <!-- Batches section -->
+    <div class="container my-4 p-4 bg-white rounded-3 shadow-lg">
+        <h2 class="mb-4 text-primary">Batches</h2>
+        <div class="table-responsive">
+            <table class="table table-hover table-striped border rounded-3 overflow-hidden">
+                <thead class="bg-light">
+                    <tr>
+                        <th scope="col">Batch ID</th>
+                        <th scope="col">Product ID</th>
+                        <th scope="col">Manufactured</th>
+                        <th scope="col">Quantity</th>
+                        <th scope="col">Expiry</th>
+                    </tr>
+                </thead>
+                <tbody id="batchListTableBody">
+                    <tr>
+                        <td colspan="5" class="text-muted">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <!-- Custom JavaScript for this page (if it were standalone) -->
@@ -105,6 +128,22 @@
                 });
             }
 
+            // WHY: display existing batches via new API (Closes: #4)
+            async function loadBatches() {
+                const response = await fetch('http://localhost:8000/batches');
+                const batches = await response.json();
+                const tbody = document.getElementById('batchListTableBody');
+                tbody.innerHTML = '';
+                batches.forEach(b => {
+                    const row = tbody.insertRow();
+                    row.insertCell().textContent = b.batch_id;
+                    row.insertCell().textContent = b.product_id;
+                    row.insertCell().textContent = b.date_manufactured;
+                    row.insertCell().textContent = b.quantity_produced;
+                    row.insertCell().textContent = b.expiry_date || '';
+                });
+            }
+
             const form = document.getElementById('addProductForm');
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -125,9 +164,11 @@
                 });
                 form.reset();
                 loadProducts();
+                loadBatches();
             });
 
             loadProducts();
+            loadBatches();
         });
     </script>
 </body>

@@ -101,40 +101,18 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             console.log("Arivu Foods Dashboard loaded.");
-            // Example of how you might populate data for the dashboard:
-            // This logic would ideally be in js/components.js and called by main.js
-            // async function loadDashboardData() {
-            //     try {
-            //         const products = await api.fetchProducts();
-            //         document.getElementById('totalProductsCount').textContent = products.length;
+            // WHY: update expiring count using new API (Closes: #4)
+            async function loadExpiring() {
+                try {
+                    const resp = await fetch('http://localhost:8000/expiring-stock');
+                    const data = await resp.json();
+                    document.getElementById('expiringProductsCount').textContent = data.length;
+                } catch (err) {
+                    console.error('Failed to load expiring stock', err);
+                }
+            }
 
-            //         const currentStock = await api.fetchCurrentStock();
-            //         const mainWarehouseStock = currentStock.filter(s => s.location_type === 'Warehouse').reduce((sum, item) => sum + item.quantity, 0);
-            //         document.getElementById('mainWarehouseStock').textContent = mainWarehouseStock;
-
-            //         const retailPartnerStock = currentStock.filter(s => s.location_type === 'Retail Store').reduce((sum, item) => sum + item.quantity, 0);
-            //         document.getElementById('retailPartnerStock').textContent = retailPartnerStock;
-
-            //         const expiringStock = await api.fetchExpiringStock(60); // Get products expiring in next 60 days
-            //         const totalExpiringUnits = expiringStock.reduce((sum, item) => sum + item.current_stock_quantity, 0);
-            //         document.getElementById('expiringProductsCount').textContent = totalExpiringUnits;
-
-            //         // For recent sales/movements, you'd fetch from dedicated endpoints and populate tables
-            //         // e.g., const recentSales = await api.fetchRecentSales(7);
-            //         // document.getElementById('recentSalesCount').textContent = recentSales.reduce((sum, sale) => sum + sale.quantity_sold, 0);
-
-            //         // For recent movements table
-            //         // const recentMovements = await api.fetchRecentMovements(5); // You'd need this API endpoint
-            //         // const movementsTable = createTable(movementHeaders, recentMovements, 'recentMovementsTable');
-            //         // document.getElementById('recentMovementsTableContainer').innerHTML = '';
-            //         // document.getElementById('recentMovementsTableContainer').appendChild(movementsTable);
-
-            //     } catch (error) {
-            //         console.error("Error loading dashboard data:", error);
-            //         // Use showAppModal here for user feedback
-            //     }
-            // }
-            // loadDashboardData();
+            loadExpiring();
         });
     </script>
 </body>

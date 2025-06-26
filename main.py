@@ -11,7 +11,8 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from database import get_db, Base, engine
-from models import Product
+from models import Product, Batch, StockMovement
+from datetime import date, timedelta
 
 # Create tables if not already present (initial migration)
 Base.metadata.create_all(bind=engine)
@@ -26,6 +27,30 @@ class ProductCreate(BaseModel):
     unit_of_measure: str
     standard_pack_size: float
     mrp: float | None = None
+
+
+class BatchCreate(BaseModel):
+    """Schema for creating batches."""
+    # WHY: validate incoming batch data for POST /batches
+    batch_id: str
+    product_id: str
+    date_manufactured: date
+    quantity_produced: int
+    expiry_date: date | None = None
+    remarks: str | None = None
+
+
+class StockMovementCreate(BaseModel):
+    """Schema for recording stock movement."""
+    movement_id: str
+    product_id: str
+    batch_id: str
+    movement_type: str
+    source_location_id: str | None = None
+    destination_location_id: str | None = None
+    quantity: int
+    agent_id: str | None = None
+    remarks: str | None = None
 
 @app.get("/products")
 def list_products(db: Session = Depends(get_db)):
@@ -57,3 +82,83 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_product)
     return {"message": "Product created", "product_id": db_product.product_id}
+
+
+@app.get("/batches")
+def list_batches(db: Session = Depends(get_db)):
+    """Return all batches."""
+    # WHY: list production batches for inventory tracking (Closes: #4)
+    batches = db.query(Batch).all()
+    return [
+        {
+            "batch_id": b.batch_id,
+            "product_id": b.product_id,
+            "date_manufactured": b.date_manufactured.isoformat(),
+            "quantity_produced": b.quantity_produced,
+            "expiry_date": b.expiry_date.isoformat() if b.expiry_date else None,
+            "remarks": b.remarks,
+        }
+        for b in batches
+    ]
+
+
+@app.post("/batches", status_code=201)
+def create_batch(batch: BatchCreate, db: Session = Depends(get_db)):
+    """Create a new batch."""
+    existing = db.get(Batch, batch.batch_id)
+    if existing:
+        raise HTTPException(status_code=400, detail="Batch ID already exists")
+    db_batch = Batch(**batch.dict())
+    db.add(db_batch)
+    db.commit()
+    db.refresh(db_batch)
+    return {"message": "Batch created", "batch_id": db_batch.batch_id}
+
+
+@app.get("/stock-movements")
+def list_movements(db: Session = Depends(get_db)):
+    """Return all stock movements."""
+    movements = db.query(StockMovement).all()
+    return [
+        {
+            "movement_id": m.movement_id,
+            "product_id": m.product_id,
+            "batch_id": m.batch_id,
+            "movement_date": m.movement_date.isoformat() if m.movement_date else None,
+            "movement_type": m.movement_type,
+            "source_location_id": m.source_location_id,
+            "destination_location_id": m.destination_location_id,
+            "quantity": m.quantity,
+            "agent_id": m.agent_id,
+            "remarks": m.remarks,
+        }
+        for m in movements
+    ]
+
+
+@app.post("/stock-movements", status_code=201)
+def create_movement(movement: StockMovementCreate, db: Session = Depends(get_db)):
+    """Record a stock movement."""
+    existing = db.get(StockMovement, movement.movement_id)
+    if existing:
+        raise HTTPException(status_code=400, detail="Movement ID already exists")
+    db_move = StockMovement(**movement.dict(), movement_date=date.today())
+    db.add(db_move)
+    db.commit()
+    db.refresh(db_move)
+    return {"message": "Movement recorded", "movement_id": db_move.movement_id}
+
+
+@app.get("/expiring-stock")
+def get_expiring_stock(days: int = 30, db: Session = Depends(get_db)):
+    """Return batches expiring within given days."""
+    cutoff = date.today() + timedelta(days=days)
+    batches = db.query(Batch).filter(Batch.expiry_date != None, Batch.expiry_date <= cutoff).all()
+    return [
+        {
+            "batch_id": b.batch_id,
+            "product_id": b.product_id,
+            "expiry_date": b.expiry_date.isoformat() if b.expiry_date else None,
+        }
+        for b in batches
+    ]
