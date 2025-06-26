@@ -1,6 +1,8 @@
 # Arivu Foods Inventory System
 
+
 Version: 0.7.9
+
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
 
@@ -42,6 +44,7 @@ This repository contains initial scripts to set up the inventory database and a 
 - **New:** `products.html` embedded in `arivu_Dashboard.html` showing product table
 - **Changed:** Batches now support multiple products via new `batch_products` table and auto-calculate expiry 90 days from manufacturing
 - **New:** `/warehouse-stock/summary` endpoint shows total quantity per product in the main warehouse
+=======
 
 ## Quick Start
 1. Install dependencies: `pip install -r requirements.txt`
