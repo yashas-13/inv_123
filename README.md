@@ -1,6 +1,6 @@
 # Arivu Foods Inventory System
 
-Version: 0.7.6
+Version: 0.7.7
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
 
@@ -38,6 +38,8 @@ This repository contains initial scripts to set up the inventory database and a 
 - **New:** "Create Batch" modal on Arivu dashboard for quick batch entry
 - **New:** `/login.html` route serves the login page alongside root
 - **New:** Dispatch form on Arivu dashboard posts to `/stock-movements`
+- **New:** `init_db.py` now loads sample products from `products.csv`
+- **New:** `products.html` embedded in `arivu_Dashboard.html` showing product table
 
 ## Quick Start
 1. Install dependencies: `pip install -r requirements.txt`
@@ -188,5 +190,11 @@ Fetch the Arivu dashboard HTML via cURL (after login):
 curl -u <user>:<pass> http://localhost:8000/arivu_Dashboard.html
 ```
 
+Fetch the product list page via cURL:
+
+```bash
+curl http://localhost:8000/products.html
+```
+
 ## Project Status
-Version 0.7.6 introduces a dispatch form on the Arivu dashboard for sending stock to partners. Previous features including batch creation and warehouse stock listing remain unchanged. Run `python init_db.py` if you haven't created the database yet, then `uvicorn main:app --reload` to start the server.
+Version 0.7.7 loads sample products from `products.csv` during database initialization and embeds a product list inside the Arivu dashboard. Existing dispatch and batch features remain. Run `python init_db.py` to recreate the database with sample data, then `uvicorn main:app --reload` to start the server.

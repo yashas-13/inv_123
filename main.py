@@ -84,6 +84,11 @@ def serve_store_dashboard_page():
 @app.get("/product_list.html", response_class=HTMLResponse)
 def serve_product_list_page():
     return FileResponse("product_list.html")
+
+# WHY: provide embedded product list for dashboard (Closes: #22)
+@app.get("/products.html", response_class=HTMLResponse)
+def serve_products_page():
+    return FileResponse("products.html")
 # Individual routes use HTTP Basic auth dependency so endpoints require login
 auth_dep = Depends(verify_basic_auth)
 
