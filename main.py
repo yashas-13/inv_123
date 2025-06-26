@@ -29,6 +29,7 @@ from services import (
     get_recent_movements,
     get_recent_sales,
     get_warehouse_stock,
+    get_warehouse_product_totals,
     get_store_current_stock,
     get_store_sales_today,
     add_new_batch_to_inventory,
@@ -423,6 +424,17 @@ def warehouse_stock(warehouse_id: str = "MAIN_WH", db: Session = Depends(get_db)
             "quantity": s.quantity,
         }
         for s in stock
+    ]
+
+
+@app.get("/warehouse-stock/summary", dependencies=[auth_dep])
+def warehouse_stock_summary(
+    warehouse_id: str = "MAIN_WH", db: Session = Depends(get_db)
+):
+    """Return product totals for a warehouse for quick dashboard view."""
+    records = get_warehouse_product_totals(db, warehouse_id)
+    return [
+        {"product_id": r.product_id, "quantity": r.total_quantity} for r in records
     ]
 
 

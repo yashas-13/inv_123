@@ -117,6 +117,16 @@
             </div>
         </div>
 
+        <!-- Aggregate totals per product -->
+        <h5 class="mb-2 text-secondary"><i class="bi bi-list-ul me-2"></i>Stock Totals</h5>
+        <div id="warehouseTotalsContainer" class="table-responsive mb-4">
+            <div class="text-center p-3">
+                <div class="spinner-border text-secondary" role="status">
+                    <span class="visually-hidden">Loading totals...</span>
+                </div>
+            </div>
+        </div>
+
         <!-- WHY: show product catalog within dashboard (Closes: #22) -->
         <h3 class="mt-5 mb-3 text-secondary"><i class="bi bi-card-list me-2"></i>Products</h3>
         <div class="mb-4" id="productsSection">
@@ -281,6 +291,25 @@
                 container.appendChild(table);
             }
 
+            async function loadWarehouseTotals() {
+                const resp = await fetch('/warehouse-stock/summary', {
+                    headers: authHeaders()
+                });
+                const summary = await resp.json();
+                const container = document.getElementById('warehouseTotalsContainer');
+                const table = document.createElement('table');
+                table.className = 'table table-striped';
+                table.innerHTML = `<thead><tr><th>Product</th><th>Qty</th></tr></thead><tbody></tbody>`;
+                const tbody = table.querySelector('tbody');
+                summary.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${row.product_id}</td><td>${row.quantity}</td>`;
+                    tbody.appendChild(tr);
+                });
+                container.innerHTML = '';
+                container.appendChild(table);
+            }
+
             // WHY: display last 5 movements including new dispatches (Closes: #21)
             // HOW: adjust limit or remove call to rollback
             async function loadRecentMovements() {
@@ -395,6 +424,7 @@
                 batchItems.innerHTML = '<div class="row g-2 batch-item mb-2"><div class="col-8"><select class="form-select product-field" required></select></div><div class="col-4"><input type="number" class="form-control qty-field" placeholder="Qty" required></div></div>';
                 populateProductDropdown();
                 loadWarehouseStock();
+                loadWarehouseTotals();
                 loadDashboard();
             });
 
@@ -441,6 +471,7 @@
                 });
                 dispatchForm.reset();
                 await loadWarehouseStock();
+                await loadWarehouseTotals();
                 await loadDashboard();
                 await loadRecentMovements();
             });
@@ -450,6 +481,7 @@
             loadRecentMovements();
             loadRetailPartners();
             loadWarehouseStock();
+            loadWarehouseTotals();
             populateProductDropdown();
             populateDispatchForm();
         });

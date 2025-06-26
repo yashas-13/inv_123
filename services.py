@@ -131,6 +131,24 @@ def get_warehouse_stock(db: Session, warehouse_id: str = "MAIN_WH"):
     )
 
 
+def get_warehouse_product_totals(db: Session, warehouse_id: str = "MAIN_WH"):
+    """Aggregate quantities by product for a warehouse.
+
+    WHY: display product-wise totals on dashboard (Closes: #24)
+    WHAT: sums CurrentStock grouped by product_id for a location
+    HOW: adjust grouping or remove endpoint to roll back
+    """
+    return (
+        db.query(
+            CurrentStock.product_id,
+            func.coalesce(func.sum(CurrentStock.quantity), 0).label("total_quantity"),
+        )
+        .filter(CurrentStock.location_id == warehouse_id)
+        .group_by(CurrentStock.product_id)
+        .all()
+    )
+
+
 def get_store_current_stock(db: Session, store_id: str) -> int:
     """Sum current stock for a store by resolving its location."""
     partner = db.query(RetailPartner).filter(RetailPartner.store_id == store_id).first()

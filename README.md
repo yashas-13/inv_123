@@ -1,6 +1,8 @@
 # Arivu Foods Inventory System
 
-Version: 0.7.8
+
+Version: 0.7.9
+
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
 
@@ -41,6 +43,8 @@ This repository contains initial scripts to set up the inventory database and a 
 - **New:** `init_db.py` now loads sample products from `products.csv`
 - **New:** `products.html` embedded in `arivu_Dashboard.html` showing product table
 - **Changed:** Batches now support multiple products via new `batch_products` table and auto-calculate expiry 90 days from manufacturing
+- **New:** `/warehouse-stock/summary` endpoint shows total quantity per product in the main warehouse
+=======
 
 ## Quick Start
 1. Install dependencies: `pip install -r requirements.txt`
@@ -164,6 +168,12 @@ Fetch warehouse stock via cURL:
 curl -u <user>:<pass> http://localhost:8000/warehouse-stock
 ```
 
+Fetch warehouse stock summary via cURL:
+
+```bash
+curl -u <user>:<pass> http://localhost:8000/warehouse-stock/summary
+```
+
 Create a store partner account via cURL:
 
 ```bash
@@ -198,4 +208,4 @@ curl http://localhost:8000/products.html
 ```
 
 ## Project Status
-Version 0.7.8 introduces `batch_products` for recording multiple products per batch. Expiry dates are now auto-set 90 days from manufacturing if omitted. Run `python init_db.py` after pulling to recreate the database, then `uvicorn main:app --reload`.
+Version 0.7.9 adds product-wise warehouse totals via `/warehouse-stock/summary`. Batches support multiple products and expiry defaults to 90 days. Run `python init_db.py` after pulling to recreate the database, then `uvicorn main:app --reload`.
