@@ -93,3 +93,13 @@ CREATE TABLE retail_sales (
     CONSTRAINT fk_retail_sale_batch FOREIGN KEY (batch_id) REFERENCES batches(batch_id),
     CONSTRAINT fk_retail_sale_agent FOREIGN KEY (sales_agent_id) REFERENCES agents(agent_id)
 );
+
+-- User accounts table for login management
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    store_id VARCHAR(50),
+    CONSTRAINT fk_user_store FOREIGN KEY (store_id) REFERENCES locations(location_id)
+);

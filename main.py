@@ -7,9 +7,10 @@ Closes: #2.
 """
 
 from fastapi import FastAPI, Depends, HTTPException
-from auth import verify_api_key  # ensure every request carries valid API key
+from auth import verify_api_key  # ensure only authorized clients call the API
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+import hashlib
 
 from services import (
     get_all_products,
@@ -26,20 +27,20 @@ from services import (
     get_recent_sales,
     get_store_current_stock,
     get_store_sales_today,
+    create_user,
+    get_user_by_username,
 )
 
 from database import get_db, Base, engine
-from models import Product, Batch, StockMovement, Location
+from models import Product, Batch, StockMovement, Location, User
 from datetime import date, timedelta
 
 # Create tables if not already present (initial migration)
 Base.metadata.create_all(bind=engine)
 
-# WHY: enforce simple API key authentication across all endpoints (Closes: #8)
-app = FastAPI(
-    title="Arivu Foods Inventory API",
-    dependencies=[Depends(verify_api_key)],
-)
+app = FastAPI(title="Arivu Foods Inventory API")
+# Individual routes use verify_api_key dependency to allow open login/register
+auth_dep = Depends(verify_api_key)
 
 
 class ProductCreate(BaseModel):
@@ -74,7 +75,42 @@ class StockMovementCreate(BaseModel):
     agent_id: str | None = None
     remarks: str | None = None
 
-@app.get("/products")
+
+class UserCreate(BaseModel):
+    """Signup schema."""
+    # WHY: allow front-end registration of users (Closes: #9)
+    username: str
+    password: str
+    role: str
+    store_id: str | None = None
+
+
+class UserLogin(BaseModel):
+    """Login schema."""
+    username: str
+    password: str
+
+
+@app.post("/register", status_code=201)
+def register(user: UserCreate, db: Session = Depends(get_db)):
+    """Create a user account."""
+    if get_user_by_username(db, user.username):
+        raise HTTPException(status_code=400, detail="Username already exists")
+    hashed = hashlib.sha256(user.password.encode()).hexdigest()
+    db_user = create_user(db, {**user.dict(exclude={'password'}), 'password': hashed})
+    return {"message": "User registered", "id": db_user.id}
+
+
+@app.post("/login")
+def login(credentials: UserLogin, db: Session = Depends(get_db)):
+    """Verify credentials and return role info."""
+    user = get_user_by_username(db, credentials.username)
+    hashed = hashlib.sha256(credentials.password.encode()).hexdigest()
+    if not user or user.password != hashed:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    return {"role": user.role, "store_id": user.store_id}
+
+@app.get("/products", dependencies=[auth_dep])
 def list_products(db: Session = Depends(get_db)):
     """Return all products."""
     products = get_all_products(db)
@@ -90,7 +126,7 @@ def list_products(db: Session = Depends(get_db)):
     ]
 
 
-@app.post("/products", status_code=201)
+@app.post("/products", status_code=201, dependencies=[auth_dep])
 def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     """Create a new product in the database."""
     # WHY: allow backend to manage DB by inserting products (Closes: #3)
@@ -103,7 +139,7 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     return {"message": "Product created", "product_id": db_product.product_id}
 
 
-@app.get("/batches")
+@app.get("/batches", dependencies=[auth_dep])
 def list_batches(db: Session = Depends(get_db)):
     """Return all batches."""
     # WHY: list production batches for inventory tracking (Closes: #4)
@@ -121,7 +157,7 @@ def list_batches(db: Session = Depends(get_db)):
     ]
 
 
-@app.post("/batches", status_code=201)
+@app.post("/batches", status_code=201, dependencies=[auth_dep])
 def create_batch(batch: BatchCreate, db: Session = Depends(get_db)):
     """Create a new batch."""
     existing = db.get(Batch, batch.batch_id)
@@ -131,7 +167,7 @@ def create_batch(batch: BatchCreate, db: Session = Depends(get_db)):
     return {"message": "Batch created", "batch_id": db_batch.batch_id}
 
 
-@app.get("/stock-movements")
+@app.get("/stock-movements", dependencies=[auth_dep])
 def list_movements(db: Session = Depends(get_db)):
     """Return all stock movements."""
     movements = get_all_movements(db)
@@ -152,7 +188,7 @@ def list_movements(db: Session = Depends(get_db)):
     ]
 
 
-@app.post("/stock-movements", status_code=201)
+@app.post("/stock-movements", status_code=201, dependencies=[auth_dep])
 def create_movement(movement: StockMovementCreate, db: Session = Depends(get_db)):
     """Record a stock movement."""
     existing = db.get(StockMovement, movement.movement_id)
@@ -162,7 +198,7 @@ def create_movement(movement: StockMovementCreate, db: Session = Depends(get_db)
     return {"message": "Movement recorded", "movement_id": db_move.movement_id}
 
 
-@app.get("/expiring-stock")
+@app.get("/expiring-stock", dependencies=[auth_dep])
 def get_expiring_stock(days: int = 30, db: Session = Depends(get_db)):
     """Return batches expiring within given days."""
     cutoff = date.today() + timedelta(days=days)
@@ -179,7 +215,7 @@ def get_expiring_stock(days: int = 30, db: Session = Depends(get_db)):
 
 # --- Dashboard endpoints ---
 
-@app.get("/dashboard/arivu")
+@app.get("/dashboard/arivu", dependencies=[auth_dep])
 def arivu_dashboard(db: Session = Depends(get_db)):
     """Aggregate metrics for manufacturer dashboard."""
     return {
@@ -199,7 +235,7 @@ def arivu_dashboard(db: Session = Depends(get_db)):
     }
 
 
-@app.get("/dashboard/store/{store_id}")
+@app.get("/dashboard/store/{store_id}", dependencies=[auth_dep])
 def store_dashboard(store_id: str, db: Session = Depends(get_db)):
     """Return stock and sales info for a retail partner."""
     return {
@@ -208,7 +244,7 @@ def store_dashboard(store_id: str, db: Session = Depends(get_db)):
     }
 
 
-@app.get("/dashboard/recent-sales")
+@app.get("/dashboard/recent-sales", dependencies=[auth_dep])
 def recent_sales(limit: int = 5, db: Session = Depends(get_db)):
     """Return recent retail sales for overview."""
     # WHY: show latest sales data on dashboards (Closes: #7)
@@ -225,7 +261,7 @@ def recent_sales(limit: int = 5, db: Session = Depends(get_db)):
     ]
 
 
-@app.get("/locations")
+@app.get("/locations", dependencies=[auth_dep])
 def list_locations(db: Session = Depends(get_db)):
     """List all locations."""
     locations = db.query(Location).all()

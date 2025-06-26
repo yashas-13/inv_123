@@ -109,3 +109,16 @@ class RetailSale(Base):
     sale_price_per_unit = Column(DECIMAL(10, 2))
     remarks = Column(String)
 
+
+class User(Base):
+    """Application user accounts."""
+    # WHY: enable login for dashboards (Closes: #9)
+    # WHAT: maps to new users table with role-based access
+    # HOW: extend with password hashing or remove table to rollback
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(255), unique=True, nullable=False)
+    password = Column(String(255), nullable=False)  # hashed password
+    role = Column(String(50), nullable=False)
+    store_id = Column(String(50), ForeignKey('locations.location_id'))
+

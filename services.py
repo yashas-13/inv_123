@@ -18,6 +18,7 @@ from models import (
     CurrentStock,
     RetailSale,
     Location,
+    User,
 )
 
 # --- CRUD helpers ---
@@ -123,3 +124,19 @@ def get_recent_sales(db: Session, limit: int = 5):
         .limit(limit)
         .all()
     )
+
+# --- User management ---
+def get_user_by_username(db: Session, username: str):
+    """Return user by username or None."""
+    # WHY: needed for login endpoint (Closes: #9)
+    return db.query(User).filter(User.username == username).first()
+
+
+def create_user(db: Session, data: dict) -> User:
+    """Create new user account."""
+    # WHAT: inserts into users table, hashing already done upstream
+    user = User(**data)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
