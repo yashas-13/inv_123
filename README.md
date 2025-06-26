@@ -1,6 +1,6 @@
 # Arivu Foods Inventory System
 
-Version: 0.7.3
+Version: 0.7.4
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
 
@@ -35,6 +35,7 @@ This repository contains initial scripts to set up the inventory database and a 
 - **New:** Static routes serve HTML pages (`register.html`, `arivu_Dashboard.html`,
   etc.) directly from root to fix 404s after login
 - **New:** `/warehouse-stock` endpoint lists main warehouse inventory and dashboard form allows adding batches
+- **New:** `/login.html` route serves the login page alongside root
 
 ## Quick Start
 1. Install dependencies: `pip install -r requirements.txt`
@@ -164,6 +165,12 @@ Fetch the registration page via cURL (no auth required):
 curl http://localhost:8000/register.html
 ```
 
+Fetch the login page via cURL (no auth required):
+
+```bash
+curl http://localhost:8000/login.html
+```
+
 Fetch the Arivu dashboard HTML via cURL (after login):
 
 ```bash
@@ -171,4 +178,4 @@ curl -u <user>:<pass> http://localhost:8000/arivu_Dashboard.html
 ```
 
 ## Project Status
-Version 0.7.3 introduces warehouse inventory management with a new `/warehouse-stock` API and batch creation form on the dashboard. Run `python init_db.py` if you haven't created the database yet, then `uvicorn main:app --reload` to start the server.
+Version 0.7.4 adds an alias route `/login.html` for the login page. Previous features including the `/warehouse-stock` API remain unchanged. Run `python init_db.py` if you haven't created the database yet, then `uvicorn main:app --reload` to start the server.

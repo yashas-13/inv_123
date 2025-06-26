@@ -58,6 +58,13 @@ app.mount("/ui", StaticFiles(directory="."), name="ui")
 def serve_login():
     """Return login page so users can authenticate via browser."""
     return FileResponse("login.html")
+
+# WHY: allow direct access via /login.html as well as root (Closes: #20)
+# WHAT: serve same login page when requested by filename
+# HOW: remove this route if frontend uses a dedicated framework router
+@app.get("/login.html", response_class=HTMLResponse)
+def serve_login_page_alias():
+    return FileResponse("login.html")
 # Additional static file routes so relative links work from login page
 # WHY: fix 404 errors for pages like register.html when accessed directly
 # WHAT: expose key HTML pages at the root path
