@@ -83,12 +83,15 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <!-- Custom JavaScript for this page (would be handled by main.js/components.js) -->
     <script>
+        const API_KEY = 'changeme';
         document.addEventListener('DOMContentLoaded', () => {
             console.log("Store Partner Dashboard loaded.");
 
             async function loadStoreDashboard(storeId) {
                 document.getElementById('dashboardContent').classList.remove('d-none');
-                const resp = await fetch(`http://localhost:8000/dashboard/store/${storeId}`);
+                const resp = await fetch(`http://localhost:8000/dashboard/store/${storeId}`, {
+                    headers: {'X-API-Key': API_KEY}
+                });
                 const data = await resp.json();
                 document.getElementById('storeCurrentStock').textContent = data.current_stock;
                 document.getElementById('storeSalesToday').textContent = data.sales_today;
@@ -96,7 +99,9 @@
 
             async function populateStoreDropdown() {
                 try {
-                    const resp = await fetch('http://localhost:8000/locations');
+                    const resp = await fetch('http://localhost:8000/locations', {
+                        headers: {'X-API-Key': API_KEY}
+                    });
                     const locations = await resp.json();
                     const retailStores = locations.filter(loc => loc.location_type === 'Retail Store');
                     const selectStoreDropdown = document.getElementById('selectStore');
