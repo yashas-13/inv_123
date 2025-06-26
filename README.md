@@ -1,7 +1,7 @@
 # Arivu Foods Inventory System
 
 
-Version: 0.8.0
+Version: 0.9.0
 
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
@@ -40,6 +40,8 @@ This repository contains initial scripts to set up the inventory database and a 
 - **New:** Dispatch form on Arivu dashboard posts to `/stock-movements`
 - **New:** `main.py init-db` command loads sample products from `products.csv`
 - **New:** `main.py analyze-schema` prints table/column info
+- **New:** `/products/sync` endpoint and `python main.py sync-products` command
+  update the `products` table from `products.csv`
 - **New:** `products.html` embedded in `arivu_Dashboard.html` showing product table
 - **Changed:** Batches now support multiple products via new `batch_products` table and auto-calculate expiry 90 days from manufacturing
 - **New:** `/warehouse-stock/summary` endpoint shows total quantity per product in the main warehouse
@@ -48,8 +50,9 @@ This repository contains initial scripts to set up the inventory database and a 
 ## Quick Start
 1. Install dependencies: `pip install -r requirements.txt`
 2. Initialize the database: `python main.py init-db`
-3. Start the server: `uvicorn main:app --reload` (set `DATABASE_URL` as needed)
-4. Visit `http://localhost:8000/` to access the login page. Credentials will be used for HTTP Basic auth on API requests.
+3. Sync products from CSV: `python main.py sync-products`
+4. Start the server: `uvicorn main:app --reload` (set `DATABASE_URL` as needed)
+5. Visit `http://localhost:8000/` to access the login page. Credentials will be used for HTTP Basic auth on API requests.
 
 ## API Example
 Fetch products via cURL:
@@ -88,7 +91,14 @@ Create a new product via cURL:
 curl -X POST http://localhost:8000/products \
      -H 'Content-Type: application/json' \
      -u <user>:<pass> \
-     -d '{"product_id":"NEW1","product_name":"Sample","unit_of_measure":"kg","standard_pack_size":1,"mrp":100}'
+    -d '{"product_id":"NEW1","product_name":"Sample","unit_of_measure":"kg","standard_pack_size":1,"mrp":100}'
+```
+
+Sync products from CSV via cURL:
+
+```bash
+curl -X POST http://localhost:8000/products/sync \
+     -u <user>:<pass>
 ```
 
 Register a new user via cURL:
@@ -207,4 +217,4 @@ curl http://localhost:8000/products.html
 ```
 
 ## Project Status
-Version 0.8.0 consolidates all backend logic into `main.py`. Use `python main.py init-db` to recreate the database, then run `uvicorn main:app --reload`.
+Version 0.9.0 adds a CSV sync utility. Run `python main.py init-db` to recreate the database, `python main.py sync-products` whenever `products.csv` changes, then start the server with `uvicorn main:app --reload`.

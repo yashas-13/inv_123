@@ -39,6 +39,11 @@
             <div class="col-md-1">
                 <button type="submit" class="btn btn-primary w-100">Add</button>
             </div>
+            <div class="col-md-2">
+                <!-- WHY: trigger CSV sync to refresh product catalog (Closes: #45) -->
+                <!-- HOW: calls new /products/sync endpoint; remove button to rollback -->
+                <button type="button" id="syncCsvBtn" class="btn btn-secondary w-100">Sync CSV</button>
+            </div>
         </form>
         <div class="table-responsive">
             <table class="table table-hover table-striped border rounded-3 overflow-hidden">
@@ -181,6 +186,17 @@
                 form.reset();
                 loadProducts();
                 loadBatches();
+            });
+
+            document.getElementById('syncCsvBtn').addEventListener('click', async () => {
+                // WHY: allow admin to refresh products from CSV (Closes: #45)
+                // WHAT: POST /products/sync request
+                // HOW: call endpoint then reload products; remove listener to rollback
+                await fetch('/products/sync', {
+                    method: 'POST',
+                    headers: authHeaders()
+                });
+                loadProducts();
             });
 
             loadProducts();
