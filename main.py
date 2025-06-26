@@ -27,12 +27,19 @@ from services import (
     get_recent_sales,
     get_store_current_stock,
     get_store_sales_today,
+    add_new_batch_to_inventory,
+    dispatch_stock,
+    create_retail_sale,
+    get_store_current_stock_summary,
+    get_store_upcoming_deliveries,
+    get_all_retail_partners,
+    create_retail_partner,
     create_user,
     get_user_by_username,
 )
 
 from database import get_db, Base, engine
-from models import Product, Batch, StockMovement, Location, User
+from models import Product, Batch, StockMovement, Location, RetailPartner, User
 from datetime import date, timedelta
 
 # Create tables if not already present (initial migration)
@@ -74,6 +81,29 @@ class StockMovementCreate(BaseModel):
     quantity: int
     agent_id: str | None = None
     remarks: str | None = None
+
+
+class RetailSaleCreate(BaseModel):
+    """Schema for recording a retail sale."""
+    sale_id: str
+    sale_date: date
+    store_id: str
+    product_id: str
+    batch_id: str | None = None
+    quantity_sold: int
+    sales_agent_id: str | None = None
+    sale_price_per_unit: float | None = None
+    remarks: str | None = None
+
+
+class RetailPartnerCreate(BaseModel):
+    """Schema to register a retail partner."""
+    store_id: str
+    location_id: str
+    store_name: str
+    contact_person: str | None = None
+    contact_number: str | None = None
+    email: str | None = None
 
 
 class UserCreate(BaseModel):
@@ -164,6 +194,8 @@ def create_batch(batch: BatchCreate, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="Batch ID already exists")
     db_batch = svc_create_batch(db, batch.dict())
+    # WHY: update warehouse inventory when a batch is produced
+    add_new_batch_to_inventory(db, db_batch)
     return {"message": "Batch created", "batch_id": db_batch.batch_id}
 
 
@@ -195,7 +227,16 @@ def create_movement(movement: StockMovementCreate, db: Session = Depends(get_db)
     if existing:
         raise HTTPException(status_code=400, detail="Movement ID already exists")
     db_move = svc_create_movement(db, {**movement.dict(), "movement_date": date.today()})
+    # WHY: adjust CurrentStock on dispatch or receipt
+    dispatch_stock(db, db_move)
     return {"message": "Movement recorded", "movement_id": db_move.movement_id}
+
+
+@app.post("/retail-sales", status_code=201, dependencies=[auth_dep])
+def record_retail_sale(sale: RetailSaleCreate, db: Session = Depends(get_db)):
+    """Record sale at a retail partner and adjust stock."""
+    db_sale = create_retail_sale(db, sale.dict())
+    return {"message": "Sale recorded", "sale_id": db_sale.sale_id}
 
 
 @app.get("/expiring-stock", dependencies=[auth_dep])
@@ -238,10 +279,48 @@ def arivu_dashboard(db: Session = Depends(get_db)):
 @app.get("/dashboard/store/{store_id}", dependencies=[auth_dep])
 def store_dashboard(store_id: str, db: Session = Depends(get_db)):
     """Return stock and sales info for a retail partner."""
+    partner = db.get(RetailPartner, store_id)
+    if not partner:
+        raise HTTPException(status_code=404, detail="Store not found")
     return {
         "current_stock": get_store_current_stock(db, store_id),
         "sales_today": get_store_sales_today(db, store_id),
     }
+
+
+@app.get("/dashboard/store/{store_id}/stock", dependencies=[auth_dep])
+def store_stock_details(store_id: str, db: Session = Depends(get_db)):
+    """Detailed stock table for a store."""
+    partner = db.get(RetailPartner, store_id)
+    if not partner:
+        raise HTTPException(status_code=404, detail="Store not found")
+    records = get_store_current_stock_summary(db, store_id)
+    return [
+        {
+            "product_id": r.product_id,
+            "batch_id": r.batch_id,
+            "quantity": r.quantity,
+        }
+        for r in records
+    ]
+
+
+@app.get("/dashboard/store/{store_id}/deliveries", dependencies=[auth_dep])
+def store_upcoming_deliveries(store_id: str, db: Session = Depends(get_db)):
+    """Upcoming dispatches destined for the store."""
+    partner = db.get(RetailPartner, store_id)
+    if not partner:
+        raise HTTPException(status_code=404, detail="Store not found")
+    deliveries = get_store_upcoming_deliveries(db, store_id)
+    return [
+        {
+            "movement_id": d.movement_id,
+            "product_id": d.product_id,
+            "quantity": d.quantity,
+            "movement_date": d.movement_date.isoformat() if d.movement_date else None,
+        }
+        for d in deliveries
+    ]
 
 
 @app.get("/dashboard/recent-sales", dependencies=[auth_dep])
@@ -273,3 +352,26 @@ def list_locations(db: Session = Depends(get_db)):
         }
         for l in locations
     ]
+
+
+@app.get("/retail-partners", dependencies=[auth_dep])
+def list_retail_partners(db: Session = Depends(get_db)):
+    """Return all retail partners."""
+    partners = get_all_retail_partners(db)
+    return [
+        {
+            "store_id": p.store_id,
+            "location_id": p.location_id,
+            "store_name": p.store_name,
+        }
+        for p in partners
+    ]
+
+
+@app.post("/retail-partners", status_code=201, dependencies=[auth_dep])
+def create_retail_partner_endpoint(partner: RetailPartnerCreate, db: Session = Depends(get_db)):
+    """Create a new retail partner."""
+    if db.get(RetailPartner, partner.store_id):
+        raise HTTPException(status_code=400, detail="Store ID already exists")
+    db_partner = create_retail_partner(db, partner.dict())
+    return {"message": "Retail partner created", "store_id": db_partner.store_id}

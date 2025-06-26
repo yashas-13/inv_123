@@ -18,6 +18,7 @@ from models import (
     CurrentStock,
     RetailSale,
     Location,
+    RetailPartner,
     User,
 )
 
@@ -97,9 +98,13 @@ def get_recent_movements(db: Session, limit: int = 5):
 
 
 def get_store_current_stock(db: Session, store_id: str) -> int:
+    """Sum current stock for a store by resolving its location."""
+    partner = db.query(RetailPartner).filter(RetailPartner.store_id == store_id).first()
+    if not partner:
+        return 0
     return (
         db.query(func.coalesce(func.sum(CurrentStock.quantity), 0))
-        .filter(CurrentStock.location_id == store_id)
+        .filter(CurrentStock.location_id == partner.location_id)
         .scalar()
     )
 
@@ -140,3 +145,142 @@ def create_user(db: Session, data: dict) -> User:
     db.commit()
     db.refresh(user)
     return user
+
+
+# --- Inventory adjustments ---
+def add_new_batch_to_inventory(db: Session, batch: Batch, warehouse_id: str = "MAIN_WH") -> None:
+    """Insert new batch quantity into CurrentStock at the main warehouse.
+
+    WHY: keep CurrentStock table in sync with production batches. Closes inventory tracking ticket.
+    WHAT: create or update CurrentStock record when a new batch is produced.
+    HOW: adjust warehouse_id or remove call from POST /batches to roll back."""
+    stock = (
+        db.query(CurrentStock)
+        .filter(
+            CurrentStock.product_id == batch.product_id,
+            CurrentStock.batch_id == batch.batch_id,
+            CurrentStock.location_id == warehouse_id,
+        )
+        .first()
+    )
+    if stock:
+        stock.quantity += batch.quantity_produced
+    else:
+        stock = CurrentStock(
+            stock_id=f"{batch.batch_id}-{warehouse_id}",
+            product_id=batch.product_id,
+            batch_id=batch.batch_id,
+            location_id=warehouse_id,
+            quantity=batch.quantity_produced,
+        )
+        db.add(stock)
+    db.commit()
+
+
+def dispatch_stock(db: Session, movement: StockMovement) -> None:
+    """Update CurrentStock for a dispatch/transfer movement.
+
+    WHY: synchronize inventory counts when stock moves between locations.
+    WHAT: decrement source and increment destination quantities.
+    HOW: modify logic or remove call from POST /stock-movements to roll back."""
+    if movement.source_location_id:
+        src = (
+            db.query(CurrentStock)
+            .filter(
+                CurrentStock.product_id == movement.product_id,
+                CurrentStock.batch_id == movement.batch_id,
+                CurrentStock.location_id == movement.source_location_id,
+            )
+            .first()
+        )
+        if src:
+            src.quantity = max(0, src.quantity - movement.quantity)
+    if movement.destination_location_id:
+        dest = (
+            db.query(CurrentStock)
+            .filter(
+                CurrentStock.product_id == movement.product_id,
+                CurrentStock.batch_id == movement.batch_id,
+                CurrentStock.location_id == movement.destination_location_id,
+            )
+            .first()
+        )
+        if dest:
+            dest.quantity += movement.quantity
+        else:
+            dest = CurrentStock(
+                stock_id=f"{movement.batch_id}-{movement.destination_location_id}",
+                product_id=movement.product_id,
+                batch_id=movement.batch_id,
+                location_id=movement.destination_location_id,
+                quantity=movement.quantity,
+            )
+            db.add(dest)
+    db.commit()
+
+
+def create_retail_sale(db: Session, data: dict) -> RetailSale:
+    """Insert a RetailSale and decrement CurrentStock for the store."""
+    sale = RetailSale(**data)
+    db.add(sale)
+    # get store location id to update stock
+    partner = db.query(RetailPartner).filter(RetailPartner.store_id == sale.store_id).first()
+    if partner:
+        stock = (
+            db.query(CurrentStock)
+            .filter(
+                CurrentStock.product_id == sale.product_id,
+                CurrentStock.batch_id == sale.batch_id,
+                CurrentStock.location_id == partner.location_id,
+            )
+            .first()
+        )
+        if stock:
+            stock.quantity = max(0, stock.quantity - sale.quantity_sold)
+    db.commit()
+    db.refresh(sale)
+    return sale
+
+
+def get_store_current_stock_summary(db: Session, store_id: str):
+    """Return list of products and quantities for the given store."""
+    partner = db.query(RetailPartner).filter(RetailPartner.store_id == store_id).first()
+    if not partner:
+        return []
+    return (
+        db.query(CurrentStock)
+        .filter(CurrentStock.location_id == partner.location_id)
+        .all()
+    )
+
+
+def get_store_upcoming_deliveries(db: Session, store_id: str):
+    """Return future dispatch movements destined for this store."""
+    partner = db.query(RetailPartner).filter(RetailPartner.store_id == store_id).first()
+    if not partner:
+        return []
+    today = date.today()
+    return (
+        db.query(StockMovement)
+        .filter(
+            StockMovement.destination_location_id == partner.location_id,
+            StockMovement.movement_date >= today,
+        )
+        .order_by(StockMovement.movement_date)
+        .all()
+    )
+
+
+def get_all_retail_partners(db: Session):
+    """List all registered retail partners."""
+    return db.query(RetailPartner).all()
+
+
+def create_retail_partner(db: Session, data: dict) -> RetailPartner:
+    """Insert a new retail partner record."""
+    partner = RetailPartner(**data)
+    db.add(partner)
+    db.commit()
+    db.refresh(partner)
+    return partner
+
