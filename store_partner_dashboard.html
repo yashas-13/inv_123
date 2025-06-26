@@ -127,7 +127,14 @@
                 }
             }
 
-            populateStoreDropdown();
+            const urlParams = new URLSearchParams(window.location.search);
+            const storeIdFromUrl = urlParams.get('store_id');
+            if (storeIdFromUrl) {
+                await loadStoreDashboard(storeIdFromUrl);
+                document.getElementById('selectStore').classList.add('d-none');
+            } else {
+                populateStoreDropdown();
+            }
         });
     </script>
 </body>

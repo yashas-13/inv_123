@@ -1,9 +1,9 @@
 """Initialize database tables from schema.sql.
 
-WHY: Create all tables for initial setup using raw SQL.
+WHY: Guarantee all tables including new `users` table exist.
 WHAT: Reads schema.sql and executes it using SQLite connection.
-HOW: Use for initial deployments; roll back by dropping DB file.
-Closes: #1.
+HOW: Run once after updates; drop DB to roll back.
+Closes: #1 and #9 (user login support).
 """
 
 import sqlite3

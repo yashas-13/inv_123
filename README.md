@@ -1,6 +1,6 @@
 # Arivu Foods Inventory System
 
-Version: 0.5.2
+Version: 0.5.3
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
 
@@ -21,12 +21,15 @@ This repository contains initial scripts to set up the inventory database and a 
 - **New:** `/dashboard/recent-sales` API returning latest partner sales
 - **Updated:** Arivu dashboard now displays recent sales table
 - **New:** Simple API key authentication using `X-API-Key` header (`API_KEY` env var)
+- **New:** `users` table added to schema and init scripts
+- **New:** `/register` and `/login` API endpoints with `login.html` and `register.html`
+- **Updated:** store dashboard auto-loads when `store_id` query parameter is present
 
 ## Quick Start
 1. Install dependencies: `pip install fastapi uvicorn sqlalchemy`
 2. Run `python init_db.py` to (re)create `arivu_foods_inventory.db` with all tables.
 3. Set `API_KEY` environment variable (default `changeme`) and start server: `uvicorn main:app --reload` (set `DATABASE_URL` as needed)
-4. Open `product_list.html` in browser to see product list.
+4. Open `login.html` in your browser to sign in (or register first).
 
 ## API Example
 Fetch products via cURL:
@@ -59,6 +62,22 @@ curl -X POST http://localhost:8000/products \
      -d '{"product_id":"NEW1","product_name":"Sample","unit_of_measure":"kg","standard_pack_size":1,"mrp":100}'
 ```
 
+Register a new user via cURL:
+
+```bash
+curl -X POST http://localhost:8000/register \
+     -H 'Content-Type: application/json' \
+     -d '{"username":"admin","password":"secret","role":"arivu"}'
+```
+
+Login via cURL:
+
+```bash
+curl -X POST http://localhost:8000/login \
+     -H 'Content-Type: application/json' \
+     -d '{"username":"admin","password":"secret"}'
+```
+
 Fetch dashboard summary via cURL:
 
 ```bash
@@ -78,4 +97,4 @@ curl -H 'X-API-Key: <API_KEY>' http://localhost:8000/dashboard/recent-sales
 ```
 
 ## Project Status
-Version 0.5.2 introduces API key authentication and updates frontend fetch calls accordingly.
+Version 0.5.3 adds user accounts with login and registration pages. Run `python init_db.py` after pulling to create the new users table.
