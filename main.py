@@ -37,6 +37,7 @@ from services import (
     get_store_upcoming_deliveries,
     get_all_retail_partners,
     create_retail_partner,
+    create_store_partner_account,
     create_user,
     get_user_by_username,
 )
@@ -130,6 +131,19 @@ class RetailPartnerCreate(BaseModel):
     store_id: str
     location_id: str
     store_name: str
+    contact_person: str | None = None
+    contact_number: str | None = None
+    email: str | None = None
+
+
+class StorePartnerAccountCreate(BaseModel):
+    """Schema to create partner plus login user."""
+    # WHY: combine partner and user creation for admin convenience (Closes: #12)
+    store_id: str
+    location_id: str
+    store_name: str
+    username: str
+    password: str
     contact_person: str | None = None
     contact_number: str | None = None
     email: str | None = None
@@ -404,6 +418,19 @@ def create_retail_partner_endpoint(partner: RetailPartnerCreate, db: Session = D
         raise HTTPException(status_code=400, detail="Store ID already exists")
     db_partner = create_retail_partner(db, partner.dict())
     return {"message": "Retail partner created", "store_id": db_partner.store_id}
+
+
+@app.post("/store-partner-accounts", status_code=201, dependencies=[auth_dep])
+def create_store_partner_account_endpoint(account: StorePartnerAccountCreate, db: Session = Depends(get_db)):
+    """Create partner and associated user account."""
+    # WHY: streamline store onboarding by creating login with partner (Closes: #12)
+    if db.get(RetailPartner, account.store_id):
+        raise HTTPException(status_code=400, detail="Store ID already exists")
+    if get_user_by_username(db, account.username):
+        raise HTTPException(status_code=400, detail="Username already exists")
+    hashed = hashlib.sha256(account.password.encode()).hexdigest()
+    create_store_partner_account(db, {**account.dict(exclude={'password'}), 'password': hashed})
+    return {"message": "Store partner account created", "store_id": account.store_id}
 
 
 if __name__ == "__main__":

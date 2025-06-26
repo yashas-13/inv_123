@@ -108,8 +108,12 @@
         <form id="partnerForm" class="row g-2">
             <div class="col-md-2"><input type="text" class="form-control" id="storeId" placeholder="Store ID" required></div>
             <div class="col-md-2"><input type="text" class="form-control" id="locationId" placeholder="Location ID" required></div>
-            <div class="col-md-3"><input type="text" class="form-control" id="storeName" placeholder="Store Name" required></div>
-            <div class="col-md-3"><input type="text" class="form-control" id="contactPerson" placeholder="Contact"></div>
+            <div class="col-md-2"><input type="text" class="form-control" id="storeName" placeholder="Store Name" required></div>
+            <div class="col-md-2"><input type="text" class="form-control" id="contactPerson" placeholder="Contact"></div>
+            <div class="col-md-2"><input type="text" class="form-control" id="contactNumber" placeholder="Phone"></div>
+            <div class="col-md-2"><input type="email" class="form-control" id="email" placeholder="Email"></div>
+            <div class="col-md-2"><input type="text" class="form-control" id="username" placeholder="Login User" required></div>
+            <div class="col-md-2"><input type="password" class="form-control" id="password" placeholder="Password" required></div>
             <div class="col-md-2"><button class="btn btn-primary w-100" type="submit">Add</button></div>
         </form>
 
@@ -192,16 +196,20 @@
             const partnerForm = document.getElementById('partnerForm');
             partnerForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const partner = {
+                const payload = {
                     store_id: document.getElementById('storeId').value,
                     location_id: document.getElementById('locationId').value,
                     store_name: document.getElementById('storeName').value,
-                    contact_person: document.getElementById('contactPerson').value || null
+                    contact_person: document.getElementById('contactPerson').value || null,
+                    contact_number: document.getElementById('contactNumber').value || null,
+                    email: document.getElementById('email').value || null,
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value
                 };
-                await fetch('/retail-partners', {
+                await fetch('/store-partner-accounts', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json', ...authHeaders()},
-                    body: JSON.stringify(partner)
+                    body: JSON.stringify(payload)
                 });
                 partnerForm.reset();
                 loadRetailPartners();

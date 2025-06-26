@@ -284,3 +284,27 @@ def create_retail_partner(db: Session, data: dict) -> RetailPartner:
     db.refresh(partner)
     return partner
 
+
+def create_store_partner_account(db: Session, data: dict) -> tuple[RetailPartner, User]:
+    """Create a retail partner and login user in one transaction."""
+    # WHY: allow Arivu admin to register store partners with credentials (Closes: #12)
+    # WHAT: inserts into retail_partners and users tables together
+    # HOW: extend with email confirmation or remove call for rollback
+    partner_fields = {
+        k: data.get(k)
+        for k in ["store_id", "location_id", "store_name", "contact_person", "contact_number", "email"]
+    }
+    partner = RetailPartner(**partner_fields)
+    user = User(
+        username=data["username"],
+        password=data["password"],  # hashed upstream
+        role="store",
+        store_id=data["location_id"],
+    )
+    db.add(partner)
+    db.add(user)
+    db.commit()
+    db.refresh(partner)
+    db.refresh(user)
+    return partner, user
+

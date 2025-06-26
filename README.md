@@ -1,6 +1,6 @@
 # Arivu Foods Inventory System
 
-Version: 0.7.1
+Version: 0.7.2
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
 
@@ -29,6 +29,7 @@ This repository contains initial scripts to set up the inventory database and a 
 - **New:** `/retail-sales` endpoint records store sales and adjusts stock
 - **New:** detailed store dashboard endpoints `/dashboard/store/{id}/stock` and `/dashboard/store/{id}/deliveries`
 - **New:** `/retail-partners` API for listing and creating partners
+- **New:** `/store-partner-accounts` API creates partner record and login user
 - **Changed:** HTML pages load API key from `localStorage`
 - **Removed:** legacy `sqlscema.md` file
 - **New:** Static routes serve HTML pages (`register.html`, `arivu_Dashboard.html`,
@@ -132,6 +133,15 @@ Fetch retail partners via cURL:
 curl -u <user>:<pass> http://localhost:8000/retail-partners
 ```
 
+Create a store partner account via cURL:
+
+```bash
+curl -X POST http://localhost:8000/store-partner-accounts \
+     -H 'Content-Type: application/json' \
+     -u <user>:<pass> \
+     -d '{"store_id":"NEWSTORE","location_id":"LOC1","store_name":"Test Store","username":"storeuser","password":"secret"}'
+```
+
 Fetch the registration page via cURL (no auth required):
 
 ```bash
@@ -145,4 +155,4 @@ curl -u <user>:<pass> http://localhost:8000/arivu_Dashboard.html
 ```
 
 ## Project Status
-Version 0.7.1 fixes missing static page routes so registration and dashboards load correctly. Run `python init_db.py` if you haven't created the database yet, then `uvicorn main:app --reload` to start the server.
+Version 0.7.2 adds combined store partner account creation. Run `python init_db.py` if you haven't created the database yet, then `uvicorn main:app --reload` to start the server.
