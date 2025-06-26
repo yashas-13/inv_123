@@ -42,6 +42,7 @@ engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -52,7 +53,7 @@ def get_db():
 
 # --- ORM models ---
 class Product(Base):
-    __tablename__ = 'products'
+    __tablename__ = "products"
     product_id = Column(String(50), primary_key=True)
     product_name = Column(String(255), nullable=False)
     unit_of_measure = Column(String(50), nullable=False)
@@ -61,7 +62,7 @@ class Product(Base):
 
 
 class Location(Base):
-    __tablename__ = 'locations'
+    __tablename__ = "locations"
     location_id = Column(String(50), primary_key=True)
     location_name = Column(String(255), nullable=False)
     location_type = Column(String(50), nullable=False)
@@ -69,12 +70,13 @@ class Location(Base):
     city = Column(String(100))
     state = Column(String(100))
     zip_code = Column(String(20))
-    country = Column(String(100), default='India')
+    country = Column(String(100), default="India")
 
 
 class Batch(Base):
     """Batch metadata shared by contained products."""
-    __tablename__ = 'batches'
+
+    __tablename__ = "batches"
     batch_id = Column(String(50), primary_key=True)
     date_manufactured = Column(Date, nullable=False)
     expiry_date = Column(Date)
@@ -83,33 +85,38 @@ class Batch(Base):
 
 class BatchProduct(Base):
     """Association of products and quantities for each batch."""
-    __tablename__ = 'batch_products'
+
+    __tablename__ = "batch_products"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    batch_id = Column(String(50), ForeignKey('batches.batch_id'), nullable=False)
-    product_id = Column(String(50), ForeignKey('products.product_id'), nullable=False)
+    batch_id = Column(String(50), ForeignKey("batches.batch_id"), nullable=False)
+    product_id = Column(String(50), ForeignKey("products.product_id"), nullable=False)
     quantity_produced = Column(Integer, nullable=False)
 
 
 class StockMovement(Base):
     """Log of product movements between locations."""
-    __tablename__ = 'stock_movements'
+
+    __tablename__ = "stock_movements"
     movement_id = Column(String(50), primary_key=True)
-    product_id = Column(String(50), ForeignKey('products.product_id'), nullable=False)
-    batch_id = Column(String(50), ForeignKey('batches.batch_id'), nullable=False)
+    product_id = Column(String(50), ForeignKey("products.product_id"), nullable=False)
+    batch_id = Column(String(50), ForeignKey("batches.batch_id"), nullable=False)
     movement_date = Column(TIMESTAMP)
     movement_type = Column(String(50), nullable=False)
-    source_location_id = Column(String(50), ForeignKey('locations.location_id'))
-    destination_location_id = Column(String(50), ForeignKey('locations.location_id'))
+    source_location_id = Column(String(50), ForeignKey("locations.location_id"))
+    destination_location_id = Column(String(50), ForeignKey("locations.location_id"))
     quantity = Column(Integer, nullable=False)
-    agent_id = Column(String(50), ForeignKey('agents.agent_id'))
+    agent_id = Column(String(50), ForeignKey("agents.agent_id"))
     remarks = Column(String)
 
 
 class RetailPartner(Base):
     """Retail stores carrying products."""
-    __tablename__ = 'retail_partners'
+
+    __tablename__ = "retail_partners"
     store_id = Column(String(50), primary_key=True)
-    location_id = Column(String(50), ForeignKey('locations.location_id'), nullable=False)
+    location_id = Column(
+        String(50), ForeignKey("locations.location_id"), nullable=False
+    )
     store_name = Column(String(255), nullable=False)
     contact_person = Column(String(255))
     contact_number = Column(String(50))
@@ -118,7 +125,8 @@ class RetailPartner(Base):
 
 class Agent(Base):
     """Sales/dispatch agents."""
-    __tablename__ = 'agents'
+
+    __tablename__ = "agents"
     agent_id = Column(String(50), primary_key=True)
     agent_name = Column(String(255), nullable=False)
     contact_number = Column(String(50))
@@ -127,37 +135,44 @@ class Agent(Base):
 
 class CurrentStock(Base):
     """Current quantity of each batch at each location."""
-    __tablename__ = 'current_stock'
+
+    __tablename__ = "current_stock"
     stock_id = Column(String(50), primary_key=True)
-    product_id = Column(String(50), ForeignKey('products.product_id'), nullable=False)
-    batch_id = Column(String(50), ForeignKey('batches.batch_id'), nullable=False)
-    location_id = Column(String(50), ForeignKey('locations.location_id'), nullable=False)
+    product_id = Column(String(50), ForeignKey("products.product_id"), nullable=False)
+    batch_id = Column(String(50), ForeignKey("batches.batch_id"), nullable=False)
+    location_id = Column(
+        String(50), ForeignKey("locations.location_id"), nullable=False
+    )
     quantity = Column(Integer, nullable=False)
     last_updated = Column(TIMESTAMP)
 
 
 class RetailSale(Base):
     """Sales recorded at partner stores."""
-    __tablename__ = 'retail_sales'
+
+    __tablename__ = "retail_sales"
     sale_id = Column(String(50), primary_key=True)
     sale_date = Column(Date, nullable=False)
-    store_id = Column(String(50), ForeignKey('retail_partners.store_id'), nullable=False)
-    product_id = Column(String(50), ForeignKey('products.product_id'), nullable=False)
-    batch_id = Column(String(50), ForeignKey('batches.batch_id'))
+    store_id = Column(
+        String(50), ForeignKey("retail_partners.store_id"), nullable=False
+    )
+    product_id = Column(String(50), ForeignKey("products.product_id"), nullable=False)
+    batch_id = Column(String(50), ForeignKey("batches.batch_id"))
     quantity_sold = Column(Integer, nullable=False)
-    sales_agent_id = Column(String(50), ForeignKey('agents.agent_id'))
+    sales_agent_id = Column(String(50), ForeignKey("agents.agent_id"))
     sale_price_per_unit = Column(DECIMAL(10, 2))
     remarks = Column(String)
 
 
 class User(Base):
     """Application user accounts."""
-    __tablename__ = 'users'
+
+    __tablename__ = "users"
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(255), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
     role = Column(String(50), nullable=False)
-    store_id = Column(String(50), ForeignKey('locations.location_id'))
+    store_id = Column(String(50), ForeignKey("locations.location_id"))
 
 
 # Create tables if not already present (initial migration)
@@ -168,10 +183,13 @@ Base.metadata.create_all(bind=engine)
 API_KEY = os.getenv("API_KEY", "changeme")
 security = HTTPBasic()
 
+
 def verify_api_key(x_api_key: str = Header(...)):
     """Compare provided key with environment API_KEY."""
     if x_api_key != API_KEY:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API Key")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API Key"
+        )
 
 
 def verify_basic_auth(
@@ -182,7 +200,9 @@ def verify_basic_auth(
     user = db.query(User).filter(User.username == credentials.username).first()
     hashed = hashlib.sha256(credentials.password.encode()).hexdigest()
     if not user or not secrets.compare_digest(user.password, hashed):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+        )
     return user
 
 
@@ -204,11 +224,7 @@ def get_all_batches(db: Session):
     batches = db.query(Batch).all()
     result = []
     for b in batches:
-        items = (
-            db.query(BatchProduct)
-            .filter(BatchProduct.batch_id == b.batch_id)
-            .all()
-        )
+        items = db.query(BatchProduct).filter(BatchProduct.batch_id == b.batch_id).all()
         result.append((b, items))
     return result
 
@@ -274,15 +290,16 @@ def get_expiring_units_count(db: Session, days: int = 60) -> int:
 
 
 def get_recent_movements(db: Session, limit: int = 5):
-    return db.query(StockMovement).order_by(StockMovement.movement_date.desc()).limit(limit).all()
+    return (
+        db.query(StockMovement)
+        .order_by(StockMovement.movement_date.desc())
+        .limit(limit)
+        .all()
+    )
 
 
 def get_warehouse_stock(db: Session, warehouse_id: str = "MAIN_WH"):
-    return (
-        db.query(CurrentStock)
-        .filter(CurrentStock.location_id == warehouse_id)
-        .all()
-    )
+    return db.query(CurrentStock).filter(CurrentStock.location_id == warehouse_id).all()
 
 
 def get_warehouse_product_totals(db: Session, warehouse_id: str = "MAIN_WH"):
@@ -318,12 +335,7 @@ def get_store_sales_today(db: Session, store_id: str) -> int:
 
 
 def get_recent_sales(db: Session, limit: int = 5):
-    return (
-        db.query(RetailSale)
-        .order_by(RetailSale.sale_date.desc())
-        .limit(limit)
-        .all()
-    )
+    return db.query(RetailSale).order_by(RetailSale.sale_date.desc()).limit(limit).all()
 
 
 def get_user_by_username(db: Session, username: str):
@@ -338,12 +350,10 @@ def create_user(db: Session, data: dict) -> User:
     return user
 
 
-def add_new_batch_to_inventory(db: Session, batch: Batch, warehouse_id: str = "MAIN_WH") -> None:
-    items = (
-        db.query(BatchProduct)
-        .filter(BatchProduct.batch_id == batch.batch_id)
-        .all()
-    )
+def add_new_batch_to_inventory(
+    db: Session, batch: Batch, warehouse_id: str = "MAIN_WH"
+) -> None:
+    items = db.query(BatchProduct).filter(BatchProduct.batch_id == batch.batch_id).all()
     for item in items:
         stock = (
             db.query(CurrentStock)
@@ -408,7 +418,9 @@ def dispatch_stock(db: Session, movement: StockMovement) -> None:
 def create_retail_sale(db: Session, data: dict) -> RetailSale:
     sale = RetailSale(**data)
     db.add(sale)
-    partner = db.query(RetailPartner).filter(RetailPartner.store_id == sale.store_id).first()
+    partner = (
+        db.query(RetailPartner).filter(RetailPartner.store_id == sale.store_id).first()
+    )
     if partner:
         stock = (
             db.query(CurrentStock)
@@ -468,7 +480,14 @@ def create_retail_partner(db: Session, data: dict) -> RetailPartner:
 def create_store_partner_account(db: Session, data: dict) -> tuple[RetailPartner, User]:
     partner_fields = {
         k: data.get(k)
-        for k in ["store_id", "location_id", "store_name", "contact_person", "contact_number", "email"]
+        for k in [
+            "store_id",
+            "location_id",
+            "store_name",
+            "contact_person",
+            "contact_number",
+            "email",
+        ]
     }
     partner = RetailPartner(**partner_fields)
     user = User(
@@ -530,7 +549,10 @@ def load_sample_products() -> None:
             if not name:
                 continue
             qty = row.get("Quantity", "1").strip()
-            unit = row.get("measurement", "").strip() or row.get("measurement ", "").strip()
+            unit = (
+                row.get("measurement", "").strip()
+                or row.get("measurement ", "").strip()
+            )
             price = row.get("Price (₹)", "0").strip()
             product_id = _generate_product_id(name, qty, unit, idx)
             try:
@@ -542,6 +564,50 @@ def load_sample_products() -> None:
                 print(f"Failed to insert {name}: {exc}")
     conn.commit()
     conn.close()
+
+
+# WHY: keep database products in sync with CSV file when new rows are added
+# WHAT: update or insert each product from products.csv (Closes: #45)
+# HOW: call sync_products_from_csv() via CLI or POST /products/sync; remove
+#      function and route to roll back
+def sync_products_from_csv(db: Session, csv_path: Path = Path("products.csv")) -> int:
+    if not csv_path.exists():
+        print("products.csv not found; nothing to sync")
+        return 0
+    import csv
+
+    count = 0
+    with csv_path.open(newline="") as f:
+        reader = csv.DictReader(f)
+        for idx, row in enumerate(reader, start=1):
+            name = row.get("Product Name", "").strip()
+            if not name:
+                continue
+            qty = row.get("Quantity", "1").strip()
+            unit = (
+                row.get("measurement", "").strip()
+                or row.get("measurement ", "").strip()
+            )
+            price = row.get("Price (₹)", "0").strip()
+            product_id = _generate_product_id(name, qty, unit, idx)
+            product = db.get(Product, product_id)
+            if product:
+                product.product_name = name
+                product.unit_of_measure = unit or "unit"
+                product.standard_pack_size = float(qty)
+                product.mrp = float(price or 0)
+            else:
+                product = Product(
+                    product_id=product_id,
+                    product_name=name,
+                    unit_of_measure=unit or "unit",
+                    standard_pack_size=float(qty),
+                    mrp=float(price or 0),
+                )
+                db.add(product)
+            count += 1
+    db.commit()
+    return count
 
 
 def analyze_schema() -> None:
@@ -565,14 +631,17 @@ def analyze_schema() -> None:
     for tbl, cols in tables.items():
         print(f"{tbl}: {', '.join(cols)}")
 
+
 app = FastAPI(title="Arivu Foods Inventory API")
 # Serve frontend HTML from /ui and show login page at root
 app.mount("/ui", StaticFiles(directory="."), name="ui")
+
 
 @app.get("/", response_class=HTMLResponse)
 def serve_login():
     """Return login page so users can authenticate via browser."""
     return FileResponse("login.html")
+
 
 # WHY: allow direct access via /login.html as well as root (Closes: #20)
 # WHAT: serve same login page when requested by filename
@@ -580,6 +649,8 @@ def serve_login():
 @app.get("/login.html", response_class=HTMLResponse)
 def serve_login_page_alias():
     return FileResponse("login.html")
+
+
 # Additional static file routes so relative links work from login page
 # WHY: fix 404 errors for pages like register.html when accessed directly
 # WHAT: expose key HTML pages at the root path
@@ -588,28 +659,35 @@ def serve_login_page_alias():
 def serve_register_page():
     return FileResponse("register.html")
 
+
 @app.get("/arivu_Dashboard.html", response_class=HTMLResponse)
 def serve_arivu_dashboard_page():
     return FileResponse("arivu_Dashboard.html")
+
 
 @app.get("/store_partner_dashboard.html", response_class=HTMLResponse)
 def serve_store_dashboard_page():
     return FileResponse("store_partner_dashboard.html")
 
+
 @app.get("/product_list.html", response_class=HTMLResponse)
 def serve_product_list_page():
     return FileResponse("product_list.html")
+
 
 # WHY: provide embedded product list for dashboard (Closes: #22)
 @app.get("/products.html", response_class=HTMLResponse)
 def serve_products_page():
     return FileResponse("products.html")
+
+
 # Individual routes use HTTP Basic auth dependency so endpoints require login
 auth_dep = Depends(verify_basic_auth)
 
 
 class ProductCreate(BaseModel):
     """Schema for creating a product."""
+
     product_id: str
     product_name: str
     unit_of_measure: str
@@ -619,12 +697,14 @@ class ProductCreate(BaseModel):
 
 class BatchItem(BaseModel):
     """Single product entry within a batch."""
+
     product_id: str
     quantity_produced: int
 
 
 class BatchCreate(BaseModel):
     """Schema for creating batches."""
+
     # WHY: validate incoming batch data for POST /batches
     batch_id: str
     date_manufactured: date
@@ -635,6 +715,7 @@ class BatchCreate(BaseModel):
 
 class StockMovementCreate(BaseModel):
     """Schema for recording stock movement."""
+
     movement_id: str
     product_id: str
     batch_id: str
@@ -648,6 +729,7 @@ class StockMovementCreate(BaseModel):
 
 class RetailSaleCreate(BaseModel):
     """Schema for recording a retail sale."""
+
     sale_id: str
     sale_date: date
     store_id: str
@@ -661,6 +743,7 @@ class RetailSaleCreate(BaseModel):
 
 class RetailPartnerCreate(BaseModel):
     """Schema to register a retail partner."""
+
     store_id: str
     location_id: str
     store_name: str
@@ -671,6 +754,7 @@ class RetailPartnerCreate(BaseModel):
 
 class StorePartnerAccountCreate(BaseModel):
     """Schema to create partner plus login user."""
+
     # WHY: combine partner and user creation for admin convenience (Closes: #12)
     store_id: str
     location_id: str
@@ -684,6 +768,7 @@ class StorePartnerAccountCreate(BaseModel):
 
 class UserCreate(BaseModel):
     """Signup schema."""
+
     # WHY: allow front-end registration of users (Closes: #9)
     username: str
     password: str
@@ -693,6 +778,7 @@ class UserCreate(BaseModel):
 
 class UserLogin(BaseModel):
     """Login schema."""
+
     username: str
     password: str
 
@@ -703,7 +789,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     if get_user_by_username(db, user.username):
         raise HTTPException(status_code=400, detail="Username already exists")
     hashed = hashlib.sha256(user.password.encode()).hexdigest()
-    db_user = create_user(db, {**user.dict(exclude={'password'}), 'password': hashed})
+    db_user = create_user(db, {**user.dict(exclude={"password"}), "password": hashed})
     return {"message": "User registered", "id": db_user.id}
 
 
@@ -715,6 +801,7 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
     if not user or user.password != hashed:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     return {"role": user.role, "store_id": user.store_id}
+
 
 @app.get("/products", dependencies=[auth_dep])
 def list_products(db: Session = Depends(get_db)):
@@ -743,6 +830,15 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Product ID already exists")
     db_product = create_product(db, product.dict())
     return {"message": "Product created", "product_id": db_product.product_id}
+
+
+# WHY: bulk update products from CSV via API for admin automation (Closes: #45)
+# WHAT: POST /products/sync reads products.csv and upserts records
+# HOW: call sync_products_from_csv; remove route and CLI command to rollback
+@app.post("/products/sync", dependencies=[auth_dep])
+def sync_products(db: Session = Depends(get_db)):
+    count = sync_products_from_csv(db)
+    return {"message": f"{count} products synced"}
 
 
 @app.get("/batches", dependencies=[auth_dep])
@@ -830,7 +926,11 @@ def record_retail_sale(sale: RetailSaleCreate, db: Session = Depends(get_db)):
 def get_expiring_stock(days: int = 30, db: Session = Depends(get_db)):
     """Return batches expiring within given days."""
     cutoff = date.today() + timedelta(days=days)
-    batches = db.query(Batch).filter(Batch.expiry_date != None, Batch.expiry_date <= cutoff).all()
+    batches = (
+        db.query(Batch)
+        .filter(Batch.expiry_date != None, Batch.expiry_date <= cutoff)
+        .all()
+    )
     return [
         {
             "batch_id": b.batch_id,
@@ -842,6 +942,7 @@ def get_expiring_stock(days: int = 30, db: Session = Depends(get_db)):
 
 
 # --- Dashboard endpoints ---
+
 
 @app.get("/dashboard/arivu", dependencies=[auth_dep])
 def arivu_dashboard(db: Session = Depends(get_db)):
@@ -856,7 +957,9 @@ def arivu_dashboard(db: Session = Depends(get_db)):
                 "movement_id": m.movement_id,
                 "product_id": m.product_id,
                 "quantity": m.quantity,
-                "movement_date": m.movement_date.isoformat() if m.movement_date else None,
+                "movement_date": (
+                    m.movement_date.isoformat() if m.movement_date else None
+                ),
             }
             for m in get_recent_movements(db)
         ],
@@ -947,9 +1050,7 @@ def warehouse_stock_summary(
 ):
     """Return product totals for a warehouse for quick dashboard view."""
     records = get_warehouse_product_totals(db, warehouse_id)
-    return [
-        {"product_id": r.product_id, "quantity": r.total_quantity} for r in records
-    ]
+    return [{"product_id": r.product_id, "quantity": r.total_quantity} for r in records]
 
 
 @app.get("/locations")
@@ -981,7 +1082,9 @@ def list_retail_partners(db: Session = Depends(get_db)):
 
 
 @app.post("/retail-partners", status_code=201, dependencies=[auth_dep])
-def create_retail_partner_endpoint(partner: RetailPartnerCreate, db: Session = Depends(get_db)):
+def create_retail_partner_endpoint(
+    partner: RetailPartnerCreate, db: Session = Depends(get_db)
+):
     """Create a new retail partner."""
     if db.get(RetailPartner, partner.store_id):
         raise HTTPException(status_code=400, detail="Store ID already exists")
@@ -990,7 +1093,9 @@ def create_retail_partner_endpoint(partner: RetailPartnerCreate, db: Session = D
 
 
 @app.post("/store-partner-accounts", status_code=201, dependencies=[auth_dep])
-def create_store_partner_account_endpoint(account: StorePartnerAccountCreate, db: Session = Depends(get_db)):
+def create_store_partner_account_endpoint(
+    account: StorePartnerAccountCreate, db: Session = Depends(get_db)
+):
     """Create partner and associated user account."""
     # WHY: streamline store onboarding by creating login with partner (Closes: #12)
     if db.get(RetailPartner, account.store_id):
@@ -998,7 +1103,9 @@ def create_store_partner_account_endpoint(account: StorePartnerAccountCreate, db
     if get_user_by_username(db, account.username):
         raise HTTPException(status_code=400, detail="Username already exists")
     hashed = hashlib.sha256(account.password.encode()).hexdigest()
-    create_store_partner_account(db, {**account.dict(exclude={'password'}), 'password': hashed})
+    create_store_partner_account(
+        db, {**account.dict(exclude={"password"}), "password": hashed}
+    )
     return {"message": "Store partner account created", "store_id": account.store_id}
 
 
@@ -1014,6 +1121,9 @@ if __name__ == "__main__":
             load_sample_products()
         elif cmd == "analyze-schema":
             analyze_schema()
+        elif cmd == "sync-products":
+            with SessionLocal() as db:
+                sync_products_from_csv(db)
         else:
             print("Unknown command")
     else:
