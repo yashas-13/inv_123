@@ -146,12 +146,14 @@
                 const tbody = document.getElementById('batchListTableBody');
                 tbody.innerHTML = '';
                 batches.forEach(b => {
-                    const row = tbody.insertRow();
-                    row.insertCell().textContent = b.batch_id;
-                    row.insertCell().textContent = b.product_id;
-                    row.insertCell().textContent = b.date_manufactured;
-                    row.insertCell().textContent = b.quantity_produced;
-                    row.insertCell().textContent = b.expiry_date || '';
+                    b.items.forEach(it => {
+                        const row = tbody.insertRow();
+                        row.insertCell().textContent = b.batch_id;
+                        row.insertCell().textContent = it.product_id;
+                        row.insertCell().textContent = b.date_manufactured;
+                        row.insertCell().textContent = it.quantity_produced;
+                        row.insertCell().textContent = b.expiry_date || '';
+                    });
                 });
             }
 

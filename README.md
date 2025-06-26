@@ -1,6 +1,6 @@
 # Arivu Foods Inventory System
 
-Version: 0.7.7
+Version: 0.7.8
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
 
@@ -40,6 +40,7 @@ This repository contains initial scripts to set up the inventory database and a 
 - **New:** Dispatch form on Arivu dashboard posts to `/stock-movements`
 - **New:** `init_db.py` now loads sample products from `products.csv`
 - **New:** `products.html` embedded in `arivu_Dashboard.html` showing product table
+- **Changed:** Batches now support multiple products via new `batch_products` table and auto-calculate expiry 90 days from manufacturing
 
 ## Quick Start
 1. Install dependencies: `pip install -r requirements.txt`
@@ -154,7 +155,7 @@ Create a batch via cURL:
 curl -X POST http://localhost:8000/batches \
      -H 'Content-Type: application/json' \
      -u <user>:<pass> \
-     -d '{"batch_id":"B1","product_id":"AFCMA1KG","date_manufactured":"2024-01-01","quantity_produced":100}'
+     -d '{"batch_id":"B1","date_manufactured":"2024-01-01","items":[{"product_id":"AFCMA1KG","quantity_produced":50},{"product_id":"AFDMIX","quantity_produced":50}]}'
 ```
 
 Fetch warehouse stock via cURL:
@@ -197,4 +198,4 @@ curl http://localhost:8000/products.html
 ```
 
 ## Project Status
-Version 0.7.7 loads sample products from `products.csv` during database initialization and embeds a product list inside the Arivu dashboard. Existing dispatch and batch features remain. Run `python init_db.py` to recreate the database with sample data, then `uvicorn main:app --reload` to start the server.
+Version 0.7.8 introduces `batch_products` for recording multiple products per batch. Expiry dates are now auto-set 90 days from manufacturing if omitted. Run `python init_db.py` after pulling to recreate the database, then `uvicorn main:app --reload`.

@@ -102,15 +102,20 @@ class ProductCreate(BaseModel):
     mrp: float | None = None
 
 
+class BatchItem(BaseModel):
+    """Single product entry within a batch."""
+    product_id: str
+    quantity_produced: int
+
+
 class BatchCreate(BaseModel):
     """Schema for creating batches."""
     # WHY: validate incoming batch data for POST /batches
     batch_id: str
-    product_id: str
     date_manufactured: date
-    quantity_produced: int
     expiry_date: date | None = None
     remarks: str | None = None
+    items: list[BatchItem]
 
 
 class StockMovementCreate(BaseModel):
@@ -230,17 +235,24 @@ def list_batches(db: Session = Depends(get_db)):
     """Return all batches."""
     # WHY: list production batches for inventory tracking (Closes: #4)
     batches = get_all_batches(db)
-    return [
-        {
-            "batch_id": b.batch_id,
-            "product_id": b.product_id,
-            "date_manufactured": b.date_manufactured.isoformat(),
-            "quantity_produced": b.quantity_produced,
-            "expiry_date": b.expiry_date.isoformat() if b.expiry_date else None,
-            "remarks": b.remarks,
-        }
-        for b in batches
-    ]
+    results = []
+    for b, items in batches:
+        results.append(
+            {
+                "batch_id": b.batch_id,
+                "date_manufactured": b.date_manufactured.isoformat(),
+                "expiry_date": b.expiry_date.isoformat() if b.expiry_date else None,
+                "remarks": b.remarks,
+                "items": [
+                    {
+                        "product_id": i.product_id,
+                        "quantity_produced": i.quantity_produced,
+                    }
+                    for i in items
+                ],
+            }
+        )
+    return results
 
 
 @app.post("/batches", status_code=201, dependencies=[auth_dep])
@@ -249,7 +261,11 @@ def create_batch(batch: BatchCreate, db: Session = Depends(get_db)):
     existing = db.get(Batch, batch.batch_id)
     if existing:
         raise HTTPException(status_code=400, detail="Batch ID already exists")
-    db_batch = svc_create_batch(db, batch.dict())
+    batch_data = batch.dict()
+    items = batch_data.pop("items")
+    if not batch_data.get("expiry_date"):
+        batch_data["expiry_date"] = batch_data["date_manufactured"] + timedelta(days=90)
+    db_batch = svc_create_batch(db, batch_data, [i for i in items])
     # WHY: update warehouse inventory when a batch is produced
     add_new_batch_to_inventory(db, db_batch)
     return {"message": "Batch created", "batch_id": db_batch.batch_id}
