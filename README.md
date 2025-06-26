@@ -1,6 +1,6 @@
 # Arivu Foods Inventory System
 
-Version: 0.7.0
+Version: 0.7.1
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
 
@@ -31,6 +31,8 @@ This repository contains initial scripts to set up the inventory database and a 
 - **New:** `/retail-partners` API for listing and creating partners
 - **Changed:** HTML pages load API key from `localStorage`
 - **Removed:** legacy `sqlscema.md` file
+- **New:** Static routes serve HTML pages (`register.html`, `arivu_Dashboard.html`,
+  etc.) directly from root to fix 404s after login
 
 ## Quick Start
 1. Install dependencies: `pip install -r requirements.txt`
@@ -130,5 +132,17 @@ Fetch retail partners via cURL:
 curl -u <user>:<pass> http://localhost:8000/retail-partners
 ```
 
+Fetch the registration page via cURL (no auth required):
+
+```bash
+curl http://localhost:8000/register.html
+```
+
+Fetch the Arivu dashboard HTML via cURL (after login):
+
+```bash
+curl -u <user>:<pass> http://localhost:8000/arivu_Dashboard.html
+```
+
 ## Project Status
-Version 0.7.0 introduces HTTP Basic authentication with a login page served from the backend. Run `python init_db.py` to create or update tables before starting the server.
+Version 0.7.1 fixes missing static page routes so registration and dashboards load correctly. Run `python init_db.py` if you haven't created the database yet, then `uvicorn main:app --reload` to start the server.
