@@ -1,6 +1,6 @@
 # Arivu Foods Inventory System
 
-Version: 0.7.5
+Version: 0.7.6
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
 
@@ -37,6 +37,7 @@ This repository contains initial scripts to set up the inventory database and a 
 - **New:** `/warehouse-stock` endpoint lists main warehouse inventory and dashboard form allows adding batches
 - **New:** "Create Batch" modal on Arivu dashboard for quick batch entry
 - **New:** `/login.html` route serves the login page alongside root
+- **New:** Dispatch form on Arivu dashboard posts to `/stock-movements`
 
 ## Quick Start
 1. Install dependencies: `pip install -r requirements.txt`
@@ -64,6 +65,15 @@ curl -X POST http://localhost:8000/stock-movements \
      -H 'Content-Type: application/json' \
      -u <user>:<pass> \
      -d '{"movement_id":"MOVE1","product_id":"AFCMA1KG","batch_id":"B1","movement_type":"dispatch","quantity":10}'
+```
+
+Dispatch stock to a store via cURL:
+
+```bash
+curl -X POST http://localhost:8000/stock-movements \
+     -H 'Content-Type: application/json' \
+     -u <user>:<pass> \
+     -d '{"movement_id":"MOVE2","product_id":"AFCMA1KG","batch_id":"B1","movement_type":"dispatch","source_location_id":"MAIN_WH","destination_location_id":"LOC1","quantity":5}'
 ```
 
 Create a new product via cURL:
@@ -179,4 +189,4 @@ curl -u <user>:<pass> http://localhost:8000/arivu_Dashboard.html
 ```
 
 ## Project Status
-Version 0.7.5 adds a "Create Batch" modal on the Arivu dashboard for quick batch creation. Previous features including the `/warehouse-stock` API remain unchanged. Run `python init_db.py` if you haven't created the database yet, then `uvicorn main:app --reload` to start the server.
+Version 0.7.6 introduces a dispatch form on the Arivu dashboard for sending stock to partners. Previous features including batch creation and warehouse stock listing remain unchanged. Run `python init_db.py` if you haven't created the database yet, then `uvicorn main:app --reload` to start the server.

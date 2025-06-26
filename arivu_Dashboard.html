@@ -157,6 +157,24 @@
             <div class="col-md-2"><button class="btn btn-primary w-100" type="submit">Add</button></div>
         </form>
 
+        <!-- WHY: allow quick dispatch of stock from warehouse to stores (Closes: #21) -->
+        <!-- HOW: remove this section if dispatch handled elsewhere -->
+        <h3 class="mt-5 mb-3 text-secondary"><i class="bi bi-truck me-2"></i>Dispatch Stock</h3>
+        <form id="dispatchForm" class="row g-2 mb-4">
+            <div class="col-md-3">
+                <select id="dispatchStore" class="form-select" required>
+                    <option value="">Select Store</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select id="dispatchBatch" class="form-select" required>
+                    <option value="">Select Batch</option>
+                </select>
+            </div>
+            <div class="col-md-2"><input type="number" class="form-control" id="dispatchQty" placeholder="Qty" required></div>
+            <div class="col-md-2"><button class="btn btn-warning w-100" type="submit">Send</button></div>
+        </form>
+
     </div>
 
     <!-- Bootstrap Bundle with Popper -->
@@ -252,6 +270,31 @@
                 container.appendChild(table);
             }
 
+            // WHY: display last 5 movements including new dispatches (Closes: #21)
+            // HOW: adjust limit or remove call to rollback
+            async function loadRecentMovements() {
+                try {
+                    const resp = await fetch('/stock-movements', { headers: authHeaders() });
+                    let moves = await resp.json();
+                    moves.sort((a,b) => new Date(b.movement_date) - new Date(a.movement_date));
+                    moves = moves.slice(0,5);
+                    const container = document.getElementById('recentMovementsTableContainer');
+                    const table = document.createElement('table');
+                    table.className = 'table table-striped';
+                    table.innerHTML = `<thead><tr><th>ID</th><th>Product</th><th>Qty</th><th>Type</th><th>Date</th></tr></thead><tbody></tbody>`;
+                    const tbody = table.querySelector('tbody');
+                    moves.forEach(m => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${m.movement_id}</td><td>${m.product_id}</td><td>${m.quantity}</td><td>${m.movement_type}</td><td>${m.movement_date || ''}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                    container.innerHTML = '';
+                    container.appendChild(table);
+                } catch (err) {
+                    console.error('Failed to load movements', err);
+                }
+            }
+
             async function populateProductDropdown() {
                 const resp = await fetch('/products', { headers: authHeaders() });
                 const products = await resp.json();
@@ -262,6 +305,33 @@
                     opt.value = p.product_id;
                     opt.textContent = p.product_name;
                     select.appendChild(opt);
+                });
+            }
+
+            // WHY: populate dispatch form with batches and store locations (Closes: #21)
+            async function populateDispatchForm() {
+                const [batchResp, partnerResp] = await Promise.all([
+                    fetch('/batches', { headers: authHeaders() }),
+                    fetch('/retail-partners', { headers: authHeaders() })
+                ]);
+                const batches = await batchResp.json();
+                const partners = await partnerResp.json();
+                const batchSelect = document.getElementById('dispatchBatch');
+                const storeSelect = document.getElementById('dispatchStore');
+                batchSelect.innerHTML = '<option value="">Select Batch</option>';
+                storeSelect.innerHTML = '<option value="">Select Store</option>';
+                batches.forEach(b => {
+                    const opt = document.createElement('option');
+                    opt.value = b.batch_id;
+                    opt.textContent = `${b.batch_id} (${b.product_id})`;
+                    opt.dataset.product = b.product_id;
+                    batchSelect.appendChild(opt);
+                });
+                partners.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.location_id;
+                    opt.textContent = p.store_name;
+                    storeSelect.appendChild(opt);
                 });
             }
 
@@ -308,11 +378,38 @@
                 loadRetailPartners();
             });
 
+            // WHY: submit dispatch to API and refresh stats (Closes: #21)
+            const dispatchForm = document.getElementById('dispatchForm');
+            dispatchForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const batchOpt = document.querySelector('#dispatchBatch option:checked');
+                const movement = {
+                    movement_id: 'MOVE' + Date.now(),
+                    product_id: batchOpt.dataset.product,
+                    batch_id: batchOpt.value,
+                    movement_type: 'dispatch',
+                    source_location_id: 'MAIN_WH',
+                    destination_location_id: document.getElementById('dispatchStore').value,
+                    quantity: parseInt(document.getElementById('dispatchQty').value)
+                };
+                await fetch('/stock-movements', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', ...authHeaders()},
+                    body: JSON.stringify(movement)
+                });
+                dispatchForm.reset();
+                await loadWarehouseStock();
+                await loadDashboard();
+                await loadRecentMovements();
+            });
+
             loadDashboard();
             loadRecentSales();
+            loadRecentMovements();
             loadRetailPartners();
             loadWarehouseStock();
             populateProductDropdown();
+            populateDispatchForm();
         });
     </script>
 </body>
