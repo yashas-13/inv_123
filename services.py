@@ -110,3 +110,16 @@ def get_store_sales_today(db: Session, store_id: str) -> int:
         .filter(and_(RetailSale.store_id == store_id, RetailSale.sale_date == today))
         .scalar()
     )
+
+
+def get_recent_sales(db: Session, limit: int = 5):
+    """Return recent retail sales records."""
+    # WHY: Provide dashboard view of latest partner sales
+    # WHAT: Query retail_sales ordered by sale_date desc
+    # HOW: adjust limit parameter to extend; remove endpoint to rollback
+    return (
+        db.query(RetailSale)
+        .order_by(RetailSale.sale_date.desc())
+        .limit(limit)
+        .all()
+    )

@@ -1,6 +1,6 @@
 # Arivu Foods Inventory System
 
-Version: 0.5.0
+Version: 0.5.1
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
 
@@ -18,6 +18,8 @@ This repository contains initial scripts to set up the inventory database and a 
 - **New:** service layer (`services.py`) with aggregation logic
 - **New:** dashboard endpoints `/dashboard/arivu` and `/dashboard/store/{id}`
 - **New:** environment variable `DATABASE_URL` controls database connection
+- **New:** `/dashboard/recent-sales` API returning latest partner sales
+- **Updated:** Arivu dashboard now displays recent sales table
 
 ## Quick Start
 1. Install dependencies: `pip install fastapi uvicorn sqlalchemy`
@@ -66,5 +68,11 @@ Fetch locations via cURL:
 curl http://localhost:8000/locations
 ```
 
+Fetch recent sales via cURL:
+
+```bash
+curl http://localhost:8000/dashboard/recent-sales
+```
+
 ## Project Status
-Version 0.5.0 adds a service layer, environment-based DB config, and dashboard APIs for aggregated data.
+Version 0.5.1 adds a recent-sales endpoint and dashboard table alongside prior service layer improvements.
