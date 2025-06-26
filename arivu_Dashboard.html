@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arivu Foods Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" xintegrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+    <div class="container my-4 p-4 bg-white rounded-3 shadow-lg">
+        <h2 class="mb-4 text-primary"><i class="bi bi-house-door-fill me-2"></i>Arivu Foods Dashboard</h2>
+        <p class="lead text-muted mb-4">Centralized overview of your entire inventory and operations.</p>
+
+        <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+            <!-- Total Products Card -->
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0 rounded-4 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-box-seam-fill text-primary display-4 mb-3"></i>
+                        <h5 class="card-title text-primary">Total Products</h5>
+                        <p class="card-text fs-2 fw-bold" id="totalProductsCount">--</p>
+                        <small class="text-muted">Unique products in catalog</small>
+                    </div>
+                </div>
+            </div>
+            <!-- Stock in Main Warehouse Card -->
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0 rounded-4 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-building-fill text-success display-4 mb-3"></i>
+                        <h5 class="card-title text-success">Main Warehouse Stock</h5>
+                        <p class="card-text fs-2 fw-bold" id="mainWarehouseStock">--</p>
+                        <small class="text-muted">Total units in your primary inventory</small>
+                    </div>
+                </div>
+            </div>
+            <!-- Stock at Retail Partners Card -->
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0 rounded-4 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-shop-window text-info display-4 mb-3"></i>
+                        <h5 class="card-title text-info">Retail Partner Stock</h5>
+                        <p class="card-text fs-2 fw-bold" id="retailPartnerStock">--</p>
+                        <small class="text-muted">Total units distributed to stores</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-2 g-4 mb-4">
+            <!-- Expiring Soon Products Card -->
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0 rounded-4 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-hourglass-bottom text-warning display-4 mb-3"></i>
+                        <h5 class="card-title text-warning">Products Expiring Soon</h5>
+                        <p class="card-text fs-2 fw-bold" id="expiringProductsCount">--</p>
+                        <small class="text-muted">Units expiring in next 60 days</small>
+                    </div>
+                    <div class="card-footer bg-transparent border-top-0">
+                        <a href="#" data-page="expiring-stock" class="btn btn-outline-warning rounded-pill">View Details</a>
+                    </div>
+                </div>
+            </div>
+            <!-- Recent Sales Card -->
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0 rounded-4 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-graph-up-arrow text-secondary display-4 mb-3"></i>
+                        <h5 class="card-title text-secondary">Recent Sales (Last 7 Days)</h5>
+                        <p class="card-text fs-2 fw-bold" id="recentSalesCount">--</p>
+                        <small class="text-muted">Total units sold by partners</small>
+                    </div>
+                    <div class="card-footer bg-transparent border-top-0">
+                        <a href="#" data-page="record-sale" class="btn btn-outline-secondary rounded-pill">Manage Sales</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="mb-3 text-secondary"><i class="bi bi-arrow-left-right me-2"></i>Recent Stock Movements</h3>
+        <div id="recentMovementsTableContainer" class="table-responsive">
+            <div class="text-center p-5">
+                <div class="spinner-border text-secondary" role="status">
+                    <span class="visually-hidden">Loading recent movements...</span>
+                </div>
+            </div>
+        </div>
+        <small class="text-muted mt-2">Last 5 stock movements across all locations.</small>
+
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <!-- Custom JavaScript for this page (would be handled by main.js/components.js) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("Arivu Foods Dashboard loaded.");
+            // Example of how you might populate data for the dashboard:
+            // This logic would ideally be in js/components.js and called by main.js
+            // async function loadDashboardData() {
+            //     try {
+            //         const products = await api.fetchProducts();
+            //         document.getElementById('totalProductsCount').textContent = products.length;
+
+            //         const currentStock = await api.fetchCurrentStock();
+            //         const mainWarehouseStock = currentStock.filter(s => s.location_type === 'Warehouse').reduce((sum, item) => sum + item.quantity, 0);
+            //         document.getElementById('mainWarehouseStock').textContent = mainWarehouseStock;
+
+            //         const retailPartnerStock = currentStock.filter(s => s.location_type === 'Retail Store').reduce((sum, item) => sum + item.quantity, 0);
+            //         document.getElementById('retailPartnerStock').textContent = retailPartnerStock;
+
+            //         const expiringStock = await api.fetchExpiringStock(60); // Get products expiring in next 60 days
+            //         const totalExpiringUnits = expiringStock.reduce((sum, item) => sum + item.current_stock_quantity, 0);
+            //         document.getElementById('expiringProductsCount').textContent = totalExpiringUnits;
+
+            //         // For recent sales/movements, you'd fetch from dedicated endpoints and populate tables
+            //         // e.g., const recentSales = await api.fetchRecentSales(7);
+            //         // document.getElementById('recentSalesCount').textContent = recentSales.reduce((sum, sale) => sum + sale.quantity_sold, 0);
+
+            //         // For recent movements table
+            //         // const recentMovements = await api.fetchRecentMovements(5); // You'd need this API endpoint
+            //         // const movementsTable = createTable(movementHeaders, recentMovements, 'recentMovementsTable');
+            //         // document.getElementById('recentMovementsTableContainer').innerHTML = '';
+            //         // document.getElementById('recentMovementsTableContainer').appendChild(movementsTable);
+
+            //     } catch (error) {
+            //         console.error("Error loading dashboard data:", error);
+            //         // Use showAppModal here for user feedback
+            //     }
+            // }
+            // loadDashboardData();
+        });
+    </script>
+</body>
+</html>
