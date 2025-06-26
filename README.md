@@ -1,23 +1,21 @@
 # Arivu Foods Inventory System
 
 
-Version: 0.7.9
+Version: 0.8.0
 
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
 
 ## Changes
 - Added `schema.sql` extracted from documentation
-- Added `database.py` for SQLAlchemy connection
-- Added `init_db.py` to create tables
-- Added `analyze_schema.py` for quick schema inspection
-- **New:** `models.py` with ORM models
-- **New:** `main.py` FastAPI app exposing `/products` endpoint
+- Consolidated backend into `main.py` replacing `auth.py`, `database.py`,
+  `models.py`, `services.py`, `init_db.py` and `analyze_schema.py`
+- `main.py` now exposes the FastAPI app and command line helpers
 - **Updated:** `product_list.html` now loads products from API
 - **New:** `POST /products` API to add products and frontend form
 - **New:** `/batches`, `/stock-movements`, `/expiring-stock` API endpoints
 - **Updated:** Dashboards and product list now use these endpoints
-- **New:** service layer (`services.py`) with aggregation logic
+- **New:** service layer functions within `main.py` provide aggregation logic
 - **New:** dashboard endpoints `/dashboard/arivu` and `/dashboard/store/{id}`
 - **New:** environment variable `DATABASE_URL` controls database connection
 - **New:** `/dashboard/recent-sales` API returning latest partner sales
@@ -40,7 +38,8 @@ This repository contains initial scripts to set up the inventory database and a 
 - **New:** "Create Batch" modal on Arivu dashboard for quick batch entry
 - **New:** `/login.html` route serves the login page alongside root
 - **New:** Dispatch form on Arivu dashboard posts to `/stock-movements`
-- **New:** `init_db.py` now loads sample products from `products.csv`
+- **New:** `main.py init-db` command loads sample products from `products.csv`
+- **New:** `main.py analyze-schema` prints table/column info
 - **New:** `products.html` embedded in `arivu_Dashboard.html` showing product table
 - **Changed:** Batches now support multiple products via new `batch_products` table and auto-calculate expiry 90 days from manufacturing
 - **New:** `/warehouse-stock/summary` endpoint shows total quantity per product in the main warehouse
@@ -48,7 +47,7 @@ This repository contains initial scripts to set up the inventory database and a 
 
 ## Quick Start
 1. Install dependencies: `pip install -r requirements.txt`
-2. Run `python init_db.py` to (re)create `arivu_foods_inventory.db` with all tables.
+2. Initialize the database: `python main.py init-db`
 3. Start the server: `uvicorn main:app --reload` (set `DATABASE_URL` as needed)
 4. Visit `http://localhost:8000/` to access the login page. Credentials will be used for HTTP Basic auth on API requests.
 
@@ -208,4 +207,4 @@ curl http://localhost:8000/products.html
 ```
 
 ## Project Status
-Version 0.7.9 adds product-wise warehouse totals via `/warehouse-stock/summary`. Batches support multiple products and expiry defaults to 90 days. Run `python init_db.py` after pulling to recreate the database, then `uvicorn main:app --reload`.
+Version 0.8.0 consolidates all backend logic into `main.py`. Use `python main.py init-db` to recreate the database, then run `uvicorn main:app --reload`.
