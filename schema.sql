@@ -39,12 +39,19 @@ CREATE TABLE agents (
 
 CREATE TABLE batches (
     batch_id VARCHAR(50) PRIMARY KEY,
-    product_id VARCHAR(50) NOT NULL,
     date_manufactured DATE NOT NULL,
-    quantity_produced INT NOT NULL,
     expiry_date DATE,
-    remarks TEXT,
-    CONSTRAINT fk_batch_product FOREIGN KEY (product_id) REFERENCES products(product_id)
+    remarks TEXT
+);
+
+-- New mapping table allowing multiple products per batch
+CREATE TABLE batch_products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    batch_id VARCHAR(50) NOT NULL,
+    product_id VARCHAR(50) NOT NULL,
+    quantity_produced INT NOT NULL,
+    CONSTRAINT fk_bp_batch FOREIGN KEY (batch_id) REFERENCES batches(batch_id),
+    CONSTRAINT fk_bp_product FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
 CREATE TABLE current_stock (

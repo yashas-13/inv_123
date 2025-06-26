@@ -35,17 +35,27 @@ class Location(Base):
 
 
 class Batch(Base):
-    """Batches of manufactured products."""
-    # WHY: represent production lots for expiry tracking
-    # WHAT: maps to batches table
-    # HOW: extend with relationships if needed; delete class to rollback
+    """Batch metadata shared by contained products."""
+    # WHY: allow multiple products under one batch identifier
+    # WHAT: holds manufactured date and expiry, while items recorded separately
+    # HOW: extend with relationship to BatchProduct; remove items to rollback
     __tablename__ = 'batches'
     batch_id = Column(String(50), primary_key=True)
-    product_id = Column(String(50), ForeignKey('products.product_id'), nullable=False)
     date_manufactured = Column(Date, nullable=False)
-    quantity_produced = Column(Integer, nullable=False)
     expiry_date = Column(Date)
     remarks = Column(String)
+
+
+class BatchProduct(Base):
+    """Association of products and quantities for each batch."""
+    # WHY: support multiple products per batch (Closes inventory request)
+    # WHAT: new table mapping batch_id to product_id and qty
+    # HOW: delete class and related tables to roll back
+    __tablename__ = 'batch_products'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    batch_id = Column(String(50), ForeignKey('batches.batch_id'), nullable=False)
+    product_id = Column(String(50), ForeignKey('products.product_id'), nullable=False)
+    quantity_produced = Column(Integer, nullable=False)
 
 
 class StockMovement(Base):

@@ -14,6 +14,7 @@ from datetime import date, timedelta
 from models import (
     Product,
     Batch,
+    BatchProduct,
     StockMovement,
     CurrentStock,
     RetailSale,
@@ -37,12 +38,31 @@ def create_product(db: Session, data: dict) -> Product:
 
 
 def get_all_batches(db: Session):
-    return db.query(Batch).all()
+    """Return batches with their associated product items."""
+    # WHY: support multi-product batches after schema change
+    batches = db.query(Batch).all()
+    result = []
+    for b in batches:
+        items = (
+            db.query(BatchProduct)
+            .filter(BatchProduct.batch_id == b.batch_id)
+            .all()
+        )
+        result.append((b, items))
+    return result
 
 
-def create_batch(db: Session, data: dict) -> Batch:
+def create_batch(db: Session, data: dict, items: list[dict]) -> Batch:
+    """Insert a batch and its product items."""
     batch = Batch(**data)
     db.add(batch)
+    for itm in items:
+        bp = BatchProduct(
+            batch_id=batch.batch_id,
+            product_id=itm["product_id"],
+            quantity_produced=itm["quantity_produced"],
+        )
+        db.add(bp)
     db.commit()
     db.refresh(batch)
     return batch
@@ -163,31 +183,33 @@ def create_user(db: Session, data: dict) -> User:
 
 # --- Inventory adjustments ---
 def add_new_batch_to_inventory(db: Session, batch: Batch, warehouse_id: str = "MAIN_WH") -> None:
-    """Insert new batch quantity into CurrentStock at the main warehouse.
-
-    WHY: keep CurrentStock table in sync with production batches. Closes inventory tracking ticket.
-    WHAT: create or update CurrentStock record when a new batch is produced.
-    HOW: adjust warehouse_id or remove call from POST /batches to roll back."""
-    stock = (
-        db.query(CurrentStock)
-        .filter(
-            CurrentStock.product_id == batch.product_id,
-            CurrentStock.batch_id == batch.batch_id,
-            CurrentStock.location_id == warehouse_id,
-        )
-        .first()
+    """Insert batch item quantities into CurrentStock at the main warehouse."""
+    items = (
+        db.query(BatchProduct)
+        .filter(BatchProduct.batch_id == batch.batch_id)
+        .all()
     )
-    if stock:
-        stock.quantity += batch.quantity_produced
-    else:
-        stock = CurrentStock(
-            stock_id=f"{batch.batch_id}-{warehouse_id}",
-            product_id=batch.product_id,
-            batch_id=batch.batch_id,
-            location_id=warehouse_id,
-            quantity=batch.quantity_produced,
+    for item in items:
+        stock = (
+            db.query(CurrentStock)
+            .filter(
+                CurrentStock.product_id == item.product_id,
+                CurrentStock.batch_id == batch.batch_id,
+                CurrentStock.location_id == warehouse_id,
+            )
+            .first()
         )
-        db.add(stock)
+        if stock:
+            stock.quantity += item.quantity_produced
+        else:
+            stock = CurrentStock(
+                stock_id=f"{batch.batch_id}-{warehouse_id}-{item.product_id}",
+                product_id=item.product_id,
+                batch_id=batch.batch_id,
+                location_id=warehouse_id,
+                quantity=item.quantity_produced,
+            )
+            db.add(stock)
     db.commit()
 
 
