@@ -6,9 +6,9 @@
 
 |Must Have |• Support ~20 retail store partners, with ability to add partners dynamically • Track individual batch numbers, production dates, and expiry dates • Maintain central inventory levels by batch • Record dispatches to each store partner by batch and quantity • Generate monthly stock reports showing remaining units per product and batch at each store and central inventory
 
-|Should Have |• Alert notifications for batches nearing expiry within a configurable threshold • User roles for sales agents and inventory managers with appropriate access controls • Exportable reports (CSV/PDF) for audit and compliance
+|Should Have |• Alert notifications for batches nearing expiry within a configurable threshold • User roles for sales agents and inventory managers with appropriate access controls • Exportable reports (CSV/PDF) for audit and compliance • Dashboard with visual analytics (e.g., stock trends, expiry risk) • Forecasting module to predict reorder requirements based on historical dispatch data
 
-|Could Have |• Dashboard with visual analytics (e.g., stock trends, expiry risk) • Forecasting module to predict reorder requirements based on historical dispatch data
+ Dashboard with visual analytics (e.g., stock trends, expiry risk) • Forecasting module to predict reorder requirements based on historical dispatch data
 
 |Won't Have |• Real-time IoT-based store shelf stock monitoring (out of scope for MVP)
 
@@ -28,135 +28,9 @@ Database: PostgreSQL for relational data and batch tracking.
 
 Notifications: Scheduled Python script (cron) for expiry alerts.
 
-==== Component Diagram [plantuml, inventory-components, png]
-
-@startuml package "Frontend (HTML/Bootstrap/JS)" { [Web UI] } package "Backend (Python API)" { [Flask/Django Server] [Scheduler] } package "Database" { [PostgreSQL] } [Web UI] --> [Flask/Django Server] [Flask/Django Server] --> [PostgreSQL] [Scheduler] --> [Flask/Django Server] : trigger expiry-check @enduml
-
-=== Database Schema The following tables capture products, batches, stores, central and store-specific inventory, and dispatch records.
-
-[plantuml, db-schema, png]
-
-@startuml entity Product {
-
-product_id : UUID
-
-name : varchar
-
-category : varchar } entity Batch {
-
-batch_id : UUID
-
-product_id : UUID
-
-production_date : date
-
-expiry_date : date
-
-total_units : int } entity Store {
-
-store_id : UUID
-
-name : varchar
-
-address : text } entity CentralInventory {
-
-batch_id : UUID
-
-units_available : int } entity StoreInventory {
-
-store_id : UUID
-
-batch_id : UUID
-
-units_on_hand : int } entity Dispatch {
-
-dispatch_id : UUID
-
-batch_id : UUID
-
-store_id : UUID
-
-units_dispatched : int
-
-dispatch_date : date } Product ||--o{ Batch : "produces" Batch ||--o{ CentralInventory : "stock" Batch ||--o{ StoreInventory : "distributed" Store ||--o{ StoreInventory : "hosts" Batch ||--o{ Dispatch : "records" Store ||--o{ Dispatch : "records" @enduml
-
-=== Core Algorithms
-
-==== 1. Batch Allocation When a dispatch request arrives:
-
-Validate store exists and batch_id is valid.
-
-Query CentralInventory for the batch's units_available.
-
-If sufficient, decrement CentralInventory.units_available and upsert into StoreInventory.
-
-Insert a Dispatch record with timestamp and quantity.
-
-Pseudocode:
-
-@startuml
-note left
-Input: store_id, batch_id, requested_units
-Output: success/failure
-end note
-start
-:available = SELECT units_available FROM CentralInventory WHERE batch_id;
-if (available >= requested_units?) then (yes)
-  :UPDATE CentralInventory SET units_available = available - requested_units;
-  :UPSERT INTO StoreInventory(store_id,batch_id,units_on_hand += requested_units);
-  :INSERT INTO Dispatch(...);
-  ->[success]
-else (no)
-  ->[failure]
-endif
-stop
-@enduml
-
-==== 2. Expiry Alert Job A daily scheduled job:
-
-Query Batch where expiry_date - today <= threshold and units_available > 0.
-
-Send email or in-app notification to inventory managers.
-
-== Implementation
-
-... (existing content) ...
-
-== UI Wireframes
-
-Below are wireframe diagrams illustrating key mobile-first interfaces, defined using PlantUML's wireframe toolkit.
-
-=== Dashboard [plantuml, wire-dashboard, png]
-
-@startuml
-skinparam rectangle {
-BackgroundColor White
-BorderColor Black
-}
-wireframe {
-title "Dashboard"
-header {
-logo "Arivu Foods"
-nav "Dashboard | Batches | Dispatch | Reports"
-}
-section "Central Inventory Overview" {
-card "Total Batches: 12"
-card "Units Available: 580"
-}
-section "Store Stock Summary" {
-table {
-| Store | Batch | Units
-| Store A | Batch001 | 20
-| Store B | Batch001 | 35
-}
-}
-footer "© Arivu Foods"
-}
-@enduml
-
 ==== User Roles and Dashboard Features
 
-Arivu (Inventory Manager)
+Arivu dashboard
 
 : Overview Panel
 
@@ -184,7 +58,7 @@ Monthly Report Generator: Date picker + “Generate” button; on click, renders
 
 Alert Center: Sidebar panel listing critical alerts (expired batches, low stock thresholds breached) with acknowledgment controls.
 
-Retail Store Partner
+Store Partner dashboard
 
 : Store Snapshot
 
@@ -222,19 +96,6 @@ Profile & Store Info: View and edit store contact details, address, and assignme
 
 @startuml wireframe { title "Monthly Reports" header { "Select Month: [2025-06]" button "Generate" } table { | Product | Batch | Central | Store A | Store B | ... | | Atta | Batch001 | 45 | 20 | 35 | } button "Export CSV" button "Export PDF" } @enduml
 
-== Milestones
-
-[options="header"] |=== |Phase | Deliverables | Timeline (weeks)
-
-|Phase 1: Core Setup |Environment, DB schema, basic API, frontend scaffold |1–2
-
-|Phase 2: Inventory & Dispatch |Implement models, batch allocation, central inventory endpoints, dispatch APIs, frontend forms |3–4
-
-|Phase 3: Reporting & Alerts |Monthly reports, expiry alert job, frontend reports |5–6
-
-|Phase 4: Testing & Deployment |Unit tests, integration tests, containerization, production deployment |7–8
-
-|Phase 5: Documentation & Handoff |API docs, user guide, training session |9–10 |===
 
 == Gathering Results
 
