@@ -117,6 +117,16 @@
             </div>
         </div>
 
+        <!-- Aggregate totals per product -->
+        <h5 class="mb-2 text-secondary"><i class="bi bi-list-ul me-2"></i>Stock Totals</h5>
+        <div id="warehouseTotalsContainer" class="table-responsive mb-4">
+            <div class="text-center p-3">
+                <div class="spinner-border text-secondary" role="status">
+                    <span class="visually-hidden">Loading totals...</span>
+                </div>
+            </div>
+        </div>
+
         <!-- WHY: show product catalog within dashboard (Closes: #22) -->
         <h3 class="mt-5 mb-3 text-secondary"><i class="bi bi-card-list me-2"></i>Products</h3>
         <div class="mb-4" id="productsSection">
@@ -134,14 +144,19 @@
                     <div class="modal-body">
                         <form id="batchForm" class="row g-2">
                             <div class="col-12"><input type="text" class="form-control" id="batchIdInput" placeholder="Batch ID" required></div>
-                            <div class="col-12">
-                                <select class="form-select" id="batchProduct" required>
-                                    <option value="">Select Product</option>
-                                </select>
+                            <div class="col-12" id="batchItems">
+                                <div class="row g-2 batch-item mb-2">
+                                    <div class="col-8">
+                                        <select class="form-select product-field" required>
+                                            <option value="">Select Product</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-4"><input type="number" class="form-control qty-field" placeholder="Qty" required></div>
+                                </div>
                             </div>
+                            <div class="col-12"><button type="button" class="btn btn-outline-secondary btn-sm" id="addItemBtn">Add Product</button></div>
                             <div class="col-6"><input type="date" class="form-control" id="manufacturedDate" required></div>
-                            <div class="col-6"><input type="number" class="form-control" id="batchQty" placeholder="Qty" required></div>
-                            <div class="col-12"><input type="date" class="form-control" id="expiryDate"></div>
+                            <div class="col-6"><input type="date" class="form-control" id="expiryDate" readonly></div>
                             <div class="col-12"><button class="btn btn-primary w-100" type="submit" data-bs-dismiss="modal">Save Batch</button></div>
                         </form>
                     </div>
@@ -276,6 +291,25 @@
                 container.appendChild(table);
             }
 
+            async function loadWarehouseTotals() {
+                const resp = await fetch('/warehouse-stock/summary', {
+                    headers: authHeaders()
+                });
+                const summary = await resp.json();
+                const container = document.getElementById('warehouseTotalsContainer');
+                const table = document.createElement('table');
+                table.className = 'table table-striped';
+                table.innerHTML = `<thead><tr><th>Product</th><th>Qty</th></tr></thead><tbody></tbody>`;
+                const tbody = table.querySelector('tbody');
+                summary.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${row.product_id}</td><td>${row.quantity}</td>`;
+                    tbody.appendChild(tr);
+                });
+                container.innerHTML = '';
+                container.appendChild(table);
+            }
+
             // WHY: display last 5 movements including new dispatches (Closes: #21)
             // HOW: adjust limit or remove call to rollback
             async function loadRecentMovements() {
@@ -301,16 +335,18 @@
                 }
             }
 
+            let productOptions = [];
             async function populateProductDropdown() {
                 const resp = await fetch('/products', { headers: authHeaders() });
-                const products = await resp.json();
-                const select = document.getElementById('batchProduct');
-                select.innerHTML = '<option value="">Select Product</option>';
-                products.forEach(p => {
-                    const opt = document.createElement('option');
-                    opt.value = p.product_id;
-                    opt.textContent = p.product_name;
-                    select.appendChild(opt);
+                productOptions = await resp.json();
+                document.querySelectorAll('.product-field').forEach(sel => {
+                    sel.innerHTML = '<option value="">Select Product</option>';
+                    productOptions.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.product_id;
+                        opt.textContent = p.product_name;
+                        sel.appendChild(opt);
+                    });
                 });
             }
 
@@ -327,11 +363,13 @@
                 batchSelect.innerHTML = '<option value="">Select Batch</option>';
                 storeSelect.innerHTML = '<option value="">Select Store</option>';
                 batches.forEach(b => {
-                    const opt = document.createElement('option');
-                    opt.value = b.batch_id;
-                    opt.textContent = `${b.batch_id} (${b.product_id})`;
-                    opt.dataset.product = b.product_id;
-                    batchSelect.appendChild(opt);
+                    b.items.forEach(it => {
+                        const opt = document.createElement('option');
+                        opt.value = b.batch_id;
+                        opt.textContent = `${b.batch_id} (${it.product_id})`;
+                        opt.dataset.product = it.product_id;
+                        batchSelect.appendChild(opt);
+                    });
                 });
                 partners.forEach(p => {
                     const opt = document.createElement('option');
@@ -343,14 +381,39 @@
 
             // Dashboard.md lines 21-22: handle quick batch creation modal
             const batchForm = document.getElementById('batchForm');
+            const batchItems = document.getElementById('batchItems');
+            const addItemBtn = document.getElementById('addItemBtn');
+
+            addItemBtn.addEventListener('click', () => {
+                const div = document.createElement('div');
+                div.className = 'row g-2 batch-item mb-2';
+                div.innerHTML = `<div class="col-8"><select class="form-select product-field" required></select></div><div class="col-4"><input type="number" class="form-control qty-field" placeholder="Qty" required></div>`;
+                batchItems.appendChild(div);
+                populateProductDropdown();
+            });
+
+            document.getElementById('manufacturedDate').addEventListener('change', e => {
+                const val = e.target.value;
+                if (val) {
+                    const d = new Date(val);
+                    d.setDate(d.getDate() + 90);
+                    document.getElementById('expiryDate').value = d.toISOString().split('T')[0];
+                }
+            });
             batchForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                const items = [];
+                document.querySelectorAll('#batchItems .batch-item').forEach(row => {
+                    items.push({
+                        product_id: row.querySelector('.product-field').value,
+                        quantity_produced: parseInt(row.querySelector('.qty-field').value)
+                    });
+                });
                 const batch = {
                     batch_id: document.getElementById('batchIdInput').value,
-                    product_id: document.getElementById('batchProduct').value,
                     date_manufactured: document.getElementById('manufacturedDate').value,
-                    quantity_produced: parseInt(document.getElementById('batchQty').value),
-                    expiry_date: document.getElementById('expiryDate').value || null
+                    expiry_date: document.getElementById('expiryDate').value || null,
+                    items
                 };
                 await fetch('/batches', {
                     method: 'POST',
@@ -358,7 +421,10 @@
                     body: JSON.stringify(batch)
                 });
                 batchForm.reset();
+                batchItems.innerHTML = '<div class="row g-2 batch-item mb-2"><div class="col-8"><select class="form-select product-field" required></select></div><div class="col-4"><input type="number" class="form-control qty-field" placeholder="Qty" required></div></div>';
+                populateProductDropdown();
                 loadWarehouseStock();
+                loadWarehouseTotals();
                 loadDashboard();
             });
 
@@ -405,6 +471,7 @@
                 });
                 dispatchForm.reset();
                 await loadWarehouseStock();
+                await loadWarehouseTotals();
                 await loadDashboard();
                 await loadRecentMovements();
             });
@@ -414,6 +481,7 @@
             loadRecentMovements();
             loadRetailPartners();
             loadWarehouseStock();
+            loadWarehouseTotals();
             populateProductDropdown();
             populateDispatchForm();
         });
