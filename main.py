@@ -22,6 +22,7 @@ from services import (
     get_total_retail_stock,
     get_expiring_units_count,
     get_recent_movements,
+    get_recent_sales,
     get_store_current_stock,
     get_store_sales_today,
 )
@@ -200,6 +201,23 @@ def store_dashboard(store_id: str, db: Session = Depends(get_db)):
         "current_stock": get_store_current_stock(db, store_id),
         "sales_today": get_store_sales_today(db, store_id),
     }
+
+
+@app.get("/dashboard/recent-sales")
+def recent_sales(limit: int = 5, db: Session = Depends(get_db)):
+    """Return recent retail sales for overview."""
+    # WHY: show latest sales data on dashboards (Closes: #7)
+    sales = get_recent_sales(db, limit)
+    return [
+        {
+            "sale_id": s.sale_id,
+            "store_id": s.store_id,
+            "product_id": s.product_id,
+            "quantity_sold": s.quantity_sold,
+            "sale_date": s.sale_date.isoformat() if s.sale_date else None,
+        }
+        for s in sales
+    ]
 
 
 @app.get("/locations")

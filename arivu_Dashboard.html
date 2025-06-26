@@ -93,6 +93,16 @@
         </div>
         <small class="text-muted mt-2">Last 5 stock movements across all locations.</small>
 
+        <h3 class="mt-5 mb-3 text-secondary"><i class="bi bi-receipt-cutoff me-2"></i>Recent Sales</h3>
+        <div id="recentSalesTableContainer" class="table-responsive">
+            <div class="text-center p-5">
+                <div class="spinner-border text-secondary" role="status">
+                    <span class="visually-hidden">Loading recent sales...</span>
+                </div>
+            </div>
+        </div>
+        <small class="text-muted mt-2">Last 5 sales records from retail partners.</small>
+
     </div>
 
     <!-- Bootstrap Bundle with Popper -->
@@ -115,7 +125,32 @@
                 }
             }
 
+            async function loadRecentSales() {
+                // WHY: show recent sales data using new API (Closes: #7)
+                try {
+                    const resp = await fetch('http://localhost:8000/dashboard/recent-sales');
+                    const sales = await resp.json();
+                    const count = sales.reduce((sum, s) => sum + s.quantity_sold, 0);
+                    document.getElementById('recentSalesCount').textContent = count;
+                    const container = document.getElementById('recentSalesTableContainer');
+                    const table = document.createElement('table');
+                    table.className = 'table table-striped';
+                    table.innerHTML = `<thead><tr><th>Sale ID</th><th>Store</th><th>Product</th><th>Qty</th><th>Date</th></tr></thead><tbody></tbody>`;
+                    const tbody = table.querySelector('tbody');
+                    sales.forEach(s => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${s.sale_id}</td><td>${s.store_id}</td><td>${s.product_id}</td><td>${s.quantity_sold}</td><td>${s.sale_date || ''}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                    container.innerHTML = '';
+                    container.appendChild(table);
+                } catch (err) {
+                    console.error('Failed to load recent sales', err);
+                }
+            }
+
             loadDashboard();
+            loadRecentSales();
         });
     </script>
 </body>
