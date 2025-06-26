@@ -37,13 +37,17 @@
             username: document.getElementById('username').value,
             password: document.getElementById('password').value
         };
-        const resp = await fetch('http://localhost:8000/login', {
+        const resp = await fetch('/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(credentials)
         });
         if (resp.ok) {
             const data = await resp.json();
+            // WHY: switch to HTTP Basic auth instead of API key (Closes: #10)
+            // HOW: credentials saved in localStorage for future API requests; clear to roll back
+            localStorage.setItem('auth_user', credentials.username);
+            localStorage.setItem('auth_pass', credentials.password);
             if (data.role === 'arivu') {
                 window.location.href = 'arivu_Dashboard.html';
             } else {

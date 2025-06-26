@@ -45,7 +45,7 @@
         document.getElementById('storeSelect').style.display = show ? 'block' : 'none';
     });
     async function loadStores() {
-        const resp = await fetch('http://localhost:8000/locations', { headers: { 'X-API-Key': 'changeme' }});
+        const resp = await fetch('/locations');
         const data = await resp.json();
         const stores = data.filter(l => l.location_type === 'Retail Store');
         const sel = document.getElementById('store_id');
@@ -66,7 +66,7 @@
             role: document.getElementById('role').value === 'store' ? 'store' : 'arivu',
             store_id: document.getElementById('role').value === 'store' ? document.getElementById('store_id').value : null
         };
-        const resp = await fetch('http://localhost:8000/register', {
+        const resp = await fetch('/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

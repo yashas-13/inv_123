@@ -1,6 +1,6 @@
 # Arivu Foods Inventory System
 
-Version: 0.6.0
+Version: 0.7.0
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
 
@@ -20,7 +20,8 @@ This repository contains initial scripts to set up the inventory database and a 
 - **New:** environment variable `DATABASE_URL` controls database connection
 - **New:** `/dashboard/recent-sales` API returning latest partner sales
 - **Updated:** Arivu dashboard now displays recent sales table
-- **New:** Simple API key authentication using `X-API-Key` header (`API_KEY` env var)
+- **Changed:** Authentication now uses HTTP Basic credentials stored in `users` table
+- **New:** Login page served at `/` via FastAPI
 - **New:** `users` table added to schema and init scripts
 - **New:** `/register` and `/login` API endpoints with `login.html` and `register.html`
 - **Updated:** store dashboard auto-loads when `store_id` query parameter is present
@@ -34,21 +35,20 @@ This repository contains initial scripts to set up the inventory database and a 
 ## Quick Start
 1. Install dependencies: `pip install -r requirements.txt`
 2. Run `python init_db.py` to (re)create `arivu_foods_inventory.db` with all tables.
-3. Set `API_KEY` environment variable (default `changeme`) and start server: `uvicorn main:app --reload` (set `DATABASE_URL` as needed)
-4. In your browser console run `localStorage.setItem('api_key','<API_KEY>')` to authenticate frontend pages.
-5. Open `login.html` in your browser to sign in (or register first).
+3. Start the server: `uvicorn main:app --reload` (set `DATABASE_URL` as needed)
+4. Visit `http://localhost:8000/` to access the login page. Credentials will be used for HTTP Basic auth on API requests.
 
 ## API Example
 Fetch products via cURL:
 
 ```bash
-curl -H 'X-API-Key: <API_KEY>' http://localhost:8000/products
+curl -u <user>:<pass> http://localhost:8000/products
 ```
 
 Fetch batches via cURL:
 
 ```bash
-curl -H 'X-API-Key: <API_KEY>' http://localhost:8000/batches
+curl -u <user>:<pass> http://localhost:8000/batches
 ```
 
 Create a stock movement via cURL:
@@ -56,7 +56,7 @@ Create a stock movement via cURL:
 ```bash
 curl -X POST http://localhost:8000/stock-movements \
      -H 'Content-Type: application/json' \
-     -H 'X-API-Key: <API_KEY>' \
+     -u <user>:<pass> \
      -d '{"movement_id":"MOVE1","product_id":"AFCMA1KG","batch_id":"B1","movement_type":"dispatch","quantity":10}'
 ```
 
@@ -65,7 +65,7 @@ Create a new product via cURL:
 ```bash
 curl -X POST http://localhost:8000/products \
      -H 'Content-Type: application/json' \
-     -H 'X-API-Key: <API_KEY>' \
+     -u <user>:<pass> \
      -d '{"product_id":"NEW1","product_name":"Sample","unit_of_measure":"kg","standard_pack_size":1,"mrp":100}'
 ```
 
@@ -88,19 +88,19 @@ curl -X POST http://localhost:8000/login \
 Fetch dashboard summary via cURL:
 
 ```bash
-curl -H 'X-API-Key: <API_KEY>' http://localhost:8000/dashboard/arivu
+curl -u <user>:<pass> http://localhost:8000/dashboard/arivu
 ```
 
 Fetch locations via cURL:
 
 ```bash
-curl -H 'X-API-Key: <API_KEY>' http://localhost:8000/locations
+curl http://localhost:8000/locations
 ```
 
 Fetch recent sales via cURL:
 
 ```bash
-curl -H 'X-API-Key: <API_KEY>' http://localhost:8000/dashboard/recent-sales
+curl -u <user>:<pass> http://localhost:8000/dashboard/recent-sales
 ```
 
 Record a sale via cURL:
@@ -108,27 +108,27 @@ Record a sale via cURL:
 ```bash
 curl -X POST http://localhost:8000/retail-sales \
      -H 'Content-Type: application/json' \
-     -H 'X-API-Key: <API_KEY>' \
+     -u <user>:<pass> \
      -d '{"sale_id":"S1","sale_date":"2024-01-01","store_id":"STORE1","product_id":"AFCMA1KG","quantity_sold":5}'
 ```
 
 Fetch store stock via cURL:
 
 ```bash
-curl -H 'X-API-Key: <API_KEY>' http://localhost:8000/dashboard/store/STORE1/stock
+curl -u <user>:<pass> http://localhost:8000/dashboard/store/STORE1/stock
 ```
 
 Fetch upcoming deliveries via cURL:
 
 ```bash
-curl -H 'X-API-Key: <API_KEY>' http://localhost:8000/dashboard/store/STORE1/deliveries
+curl -u <user>:<pass> http://localhost:8000/dashboard/store/STORE1/deliveries
 ```
 
 Fetch retail partners via cURL:
 
 ```bash
-curl -H 'X-API-Key: <API_KEY>' http://localhost:8000/retail-partners
+curl -u <user>:<pass> http://localhost:8000/retail-partners
 ```
 
 ## Project Status
-Version 0.6.0 introduces inventory synchronization, retail partner management and sales tracking. Run `python init_db.py` to create or update tables before starting the server.
+Version 0.7.0 introduces HTTP Basic authentication with a login page served from the backend. Run `python init_db.py` to create or update tables before starting the server.
