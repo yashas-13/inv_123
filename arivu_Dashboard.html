@@ -423,6 +423,10 @@
                 batchForm.reset();
                 batchItems.innerHTML = '<div class="row g-2 batch-item mb-2"><div class="col-8"><select class="form-select product-field" required></select></div><div class="col-4"><input type="number" class="form-control qty-field" placeholder="Qty" required></div></div>';
                 populateProductDropdown();
+                // WHY: update dispatch dropdown after new batch so it can be dispatched without page refresh
+                // WHAT: ensures batch creation and dispatch form stay in sync (Closes: internal issue #sync)
+                // HOW: call populateDispatchForm() whenever a batch is created
+                populateDispatchForm();
                 loadWarehouseStock();
                 loadWarehouseTotals();
                 loadDashboard();
@@ -474,6 +478,10 @@
                 await loadWarehouseTotals();
                 await loadDashboard();
                 await loadRecentMovements();
+                // WHY: refresh dropdowns so next dispatch uses updated batch list
+                // WHAT: keeps dispatch form synced after each movement
+                // HOW: call populateDispatchForm here; remove to revert
+                populateDispatchForm();
             });
 
             loadDashboard();
