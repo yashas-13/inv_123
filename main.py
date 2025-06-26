@@ -7,7 +7,10 @@ Closes: #2.
 """
 
 from fastapi import FastAPI, Depends, HTTPException
-from auth import verify_api_key  # ensure only authorized clients call the API
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+import uvicorn
+from auth import verify_basic_auth  # ensure only authorized clients call the API
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import hashlib
@@ -46,8 +49,15 @@ from datetime import date, timedelta
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Arivu Foods Inventory API")
-# Individual routes use verify_api_key dependency to allow open login/register
-auth_dep = Depends(verify_api_key)
+# Serve frontend HTML from /ui and show login page at root
+app.mount("/ui", StaticFiles(directory="."), name="ui")
+
+@app.get("/", response_class=HTMLResponse)
+def serve_login():
+    """Return login page so users can authenticate via browser."""
+    return FileResponse("login.html")
+# Individual routes use HTTP Basic auth dependency so endpoints require login
+auth_dep = Depends(verify_basic_auth)
 
 
 class ProductCreate(BaseModel):
@@ -340,7 +350,7 @@ def recent_sales(limit: int = 5, db: Session = Depends(get_db)):
     ]
 
 
-@app.get("/locations", dependencies=[auth_dep])
+@app.get("/locations")
 def list_locations(db: Session = Depends(get_db)):
     """List all locations."""
     locations = db.query(Location).all()
@@ -375,3 +385,10 @@ def create_retail_partner_endpoint(partner: RetailPartnerCreate, db: Session = D
         raise HTTPException(status_code=400, detail="Store ID already exists")
     db_partner = create_retail_partner(db, partner.dict())
     return {"message": "Retail partner created", "store_id": db_partner.store_id}
+
+
+if __name__ == "__main__":
+    """Run the dev server and auto-open the login page."""
+    import webbrowser
+    webbrowser.open("http://127.0.0.1:8000")
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

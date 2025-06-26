@@ -93,13 +93,19 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <!-- Custom JavaScript for this page (would be handled by main.js/components.js) -->
     <script>
-        const API_KEY = localStorage.getItem('api_key') || 'changeme';
+        // WHY: provide HTTP Basic headers instead of API key (Closes: #10)
+        // HOW: delete this function if switching to another auth method
+        function authHeaders() {
+            const u = localStorage.getItem('auth_user');
+            const p = localStorage.getItem('auth_pass');
+            return u && p ? { 'Authorization': 'Basic ' + btoa(`${u}:${p}`) } : {};
+        }
         document.addEventListener('DOMContentLoaded', () => {
             console.log("Store Partner Dashboard loaded.");
 
             async function loadStoreStockTable(storeId) {
-                const resp = await fetch(`http://localhost:8000/dashboard/store/${storeId}/stock`, {
-                    headers: {'X-API-Key': API_KEY}
+                const resp = await fetch(`/dashboard/store/${storeId}/stock`, {
+                    headers: authHeaders()
                 });
                 const records = await resp.json();
                 const container = document.getElementById('storeProductsTableContainer');
@@ -117,8 +123,8 @@
             }
 
             async function loadDeliveries(storeId) {
-                const resp = await fetch(`http://localhost:8000/dashboard/store/${storeId}/deliveries`, {
-                    headers: {'X-API-Key': API_KEY}
+                const resp = await fetch(`/dashboard/store/${storeId}/deliveries`, {
+                    headers: authHeaders()
                 });
                 const deliveries = await resp.json();
                 const container = document.getElementById('upcomingDeliveriesTableContainer');
@@ -137,8 +143,8 @@
 
             async function loadStoreDashboard(storeId) {
                 document.getElementById('dashboardContent').classList.remove('d-none');
-                const resp = await fetch(`http://localhost:8000/dashboard/store/${storeId}`, {
-                    headers: {'X-API-Key': API_KEY}
+                const resp = await fetch(`/dashboard/store/${storeId}`, {
+                    headers: authHeaders()
                 });
                 const data = await resp.json();
                 document.getElementById('storeCurrentStock').textContent = data.current_stock;
@@ -149,9 +155,7 @@
 
             async function populateStoreDropdown() {
                 try {
-                    const resp = await fetch('http://localhost:8000/locations', {
-                        headers: {'X-API-Key': API_KEY}
-                    });
+                    const resp = await fetch('/locations');
                     const locations = await resp.json();
                     const retailStores = locations.filter(loc => loc.location_type === 'Retail Store');
                     const selectStoreDropdown = document.getElementById('selectStore');
@@ -199,9 +203,9 @@
                     batch_id: document.getElementById('batchId').value || null,
                     quantity_sold: parseInt(document.getElementById('quantitySold').value),
                 };
-                await fetch('http://localhost:8000/retail-sales', {
+                await fetch('/retail-sales', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json','X-API-Key': API_KEY},
+                    headers: {'Content-Type': 'application/json', ...authHeaders()},
                     body: JSON.stringify(sale)
                 });
                 saleForm.reset();
