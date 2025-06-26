@@ -56,6 +56,25 @@ app.mount("/ui", StaticFiles(directory="."), name="ui")
 def serve_login():
     """Return login page so users can authenticate via browser."""
     return FileResponse("login.html")
+# Additional static file routes so relative links work from login page
+# WHY: fix 404 errors for pages like register.html when accessed directly
+# WHAT: expose key HTML pages at the root path
+# HOW: remove these routes if StaticFiles mount is changed
+@app.get("/register.html", response_class=HTMLResponse)
+def serve_register_page():
+    return FileResponse("register.html")
+
+@app.get("/arivu_Dashboard.html", response_class=HTMLResponse)
+def serve_arivu_dashboard_page():
+    return FileResponse("arivu_Dashboard.html")
+
+@app.get("/store_partner_dashboard.html", response_class=HTMLResponse)
+def serve_store_dashboard_page():
+    return FileResponse("store_partner_dashboard.html")
+
+@app.get("/product_list.html", response_class=HTMLResponse)
+def serve_product_list_page():
+    return FileResponse("product_list.html")
 # Individual routes use HTTP Basic auth dependency so endpoints require login
 auth_dep = Depends(verify_basic_auth)
 
