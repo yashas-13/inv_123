@@ -1,6 +1,6 @@
 # Arivu Foods Inventory System
 
-Version: 0.4.0
+Version: 0.5.0
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
 
@@ -15,11 +15,14 @@ This repository contains initial scripts to set up the inventory database and a 
 - **New:** `POST /products` API to add products and frontend form
 - **New:** `/batches`, `/stock-movements`, `/expiring-stock` API endpoints
 - **Updated:** Dashboards and product list now use these endpoints
+- **New:** service layer (`services.py`) with aggregation logic
+- **New:** dashboard endpoints `/dashboard/arivu` and `/dashboard/store/{id}`
+- **New:** environment variable `DATABASE_URL` controls database connection
 
 ## Quick Start
 1. Install dependencies: `pip install fastapi uvicorn sqlalchemy`
 2. Run `python init_db.py` to (re)create `arivu_foods_inventory.db` with all tables.
-3. Start API server: `uvicorn main:app --reload`
+3. Start API server: `uvicorn main:app --reload` (set `DATABASE_URL` as needed)
 4. Open `product_list.html` in browser to see product list.
 
 ## API Example
@@ -51,5 +54,17 @@ curl -X POST http://localhost:8000/products \
      -d '{"product_id":"NEW1","product_name":"Sample","unit_of_measure":"kg","standard_pack_size":1,"mrp":100}'
 ```
 
+Fetch dashboard summary via cURL:
+
+```bash
+curl http://localhost:8000/dashboard/arivu
+```
+
+Fetch locations via cURL:
+
+```bash
+curl http://localhost:8000/locations
+```
+
 ## Project Status
-Version 0.4.0 extends the API with batch tracking, stock movements, and expirying-stock reporting. Frontend pages now display batch data and show expiring counts.
+Version 0.5.0 adds a service layer, environment-based DB config, and dashboard APIs for aggregated data.

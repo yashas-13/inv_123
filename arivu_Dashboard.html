@@ -101,18 +101,21 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             console.log("Arivu Foods Dashboard loaded.");
-            // WHY: update expiring count using new API (Closes: #4)
-            async function loadExpiring() {
+            // WHY: load aggregate dashboard data from new API (Closes: #6)
+            async function loadDashboard() {
                 try {
-                    const resp = await fetch('http://localhost:8000/expiring-stock');
+                    const resp = await fetch('http://localhost:8000/dashboard/arivu');
                     const data = await resp.json();
-                    document.getElementById('expiringProductsCount').textContent = data.length;
+                    document.getElementById('totalProductsCount').textContent = data.total_products;
+                    document.getElementById('mainWarehouseStock').textContent = data.warehouse_stock;
+                    document.getElementById('retailPartnerStock').textContent = data.retail_stock;
+                    document.getElementById('expiringProductsCount').textContent = data.expiring_soon;
                 } catch (err) {
-                    console.error('Failed to load expiring stock', err);
+                    console.error('Failed to load dashboard', err);
                 }
             }
 
-            loadExpiring();
+            loadDashboard();
         });
     </script>
 </body>

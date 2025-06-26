@@ -8,6 +8,10 @@ Closes: #2 (basic API models).
 
 from sqlalchemy import Column, String, DECIMAL, Date, Integer, ForeignKey, TIMESTAMP
 
+# WHY: add remaining tables from schema for fuller tracking (Closes: #6)
+# WHAT: new ORM models for partners, agents, stock and sales
+# HOW: extend queries with relationships; remove models to roll back
+
 from database import Base
 
 class Product(Base):
@@ -58,5 +62,50 @@ class StockMovement(Base):
     destination_location_id = Column(String(50), ForeignKey('locations.location_id'))
     quantity = Column(Integer, nullable=False)
     agent_id = Column(String(50), ForeignKey('agents.agent_id'))
+    remarks = Column(String)
+
+
+class RetailPartner(Base):
+    """Retail stores carrying products."""
+    __tablename__ = 'retail_partners'
+    store_id = Column(String(50), primary_key=True)
+    location_id = Column(String(50), ForeignKey('locations.location_id'), nullable=False)
+    store_name = Column(String(255), nullable=False)
+    contact_person = Column(String(255))
+    contact_number = Column(String(50))
+    email = Column(String(255))
+
+
+class Agent(Base):
+    """Sales/dispatch agents."""
+    __tablename__ = 'agents'
+    agent_id = Column(String(50), primary_key=True)
+    agent_name = Column(String(255), nullable=False)
+    contact_number = Column(String(50))
+    email = Column(String(255))
+
+
+class CurrentStock(Base):
+    """Current quantity of each batch at each location."""
+    __tablename__ = 'current_stock'
+    stock_id = Column(String(50), primary_key=True)
+    product_id = Column(String(50), ForeignKey('products.product_id'), nullable=False)
+    batch_id = Column(String(50), ForeignKey('batches.batch_id'), nullable=False)
+    location_id = Column(String(50), ForeignKey('locations.location_id'), nullable=False)
+    quantity = Column(Integer, nullable=False)
+    last_updated = Column(TIMESTAMP)
+
+
+class RetailSale(Base):
+    """Sales recorded at partner stores."""
+    __tablename__ = 'retail_sales'
+    sale_id = Column(String(50), primary_key=True)
+    sale_date = Column(Date, nullable=False)
+    store_id = Column(String(50), ForeignKey('retail_partners.store_id'), nullable=False)
+    product_id = Column(String(50), ForeignKey('products.product_id'), nullable=False)
+    batch_id = Column(String(50), ForeignKey('batches.batch_id'))
+    quantity_sold = Column(Integer, nullable=False)
+    sales_agent_id = Column(String(50), ForeignKey('agents.agent_id'))
+    sale_price_per_unit = Column(DECIMAL(10, 2))
     remarks = Column(String)
 

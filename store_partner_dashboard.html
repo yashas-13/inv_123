@@ -85,55 +85,44 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             console.log("Store Partner Dashboard loaded.");
-            // This logic would ideally be in js/components.js and called by main.js
-            // async function loadStoreDashboard(storeId) {
-            //     document.getElementById('dashboardContent').classList.remove('d-none'); // Show content
-            //     // Example: Fetch and populate data for the selected store
-            //     // const storeStock = await api.fetchCurrentStockByLocation(storeId);
-            //     // document.getElementById('storeCurrentStock').textContent = storeStock.reduce((sum, item) => sum + item.quantity, 0);
 
-            //     // const salesToday = await api.fetchSalesByLocationAndDate(storeId, new Date().toISOString().split('T')[0]);
-            //     // document.getElementById('storeSalesToday').textContent = salesToday.reduce((sum, sale) => sum + sale.quantity_sold, 0);
+            async function loadStoreDashboard(storeId) {
+                document.getElementById('dashboardContent').classList.remove('d-none');
+                const resp = await fetch(`http://localhost:8000/dashboard/store/${storeId}`);
+                const data = await resp.json();
+                document.getElementById('storeCurrentStock').textContent = data.current_stock;
+                document.getElementById('storeSalesToday').textContent = data.sales_today;
+            }
 
-            //     // Populate 'Your Products In Stock' table
-            //     // const productsInStockTable = createTable(stockHeaders, storeStock, 'storeProductsTable');
-            //     // document.getElementById('storeProductsTableContainer').innerHTML = '';
-            //     // document.getElementById('storeProductsTableContainer').appendChild(productsInStockTable);
+            async function populateStoreDropdown() {
+                try {
+                    const resp = await fetch('http://localhost:8000/locations');
+                    const locations = await resp.json();
+                    const retailStores = locations.filter(loc => loc.location_type === 'Retail Store');
+                    const selectStoreDropdown = document.getElementById('selectStore');
+                    selectStoreDropdown.innerHTML = '<option value="">Select Your Store</option>';
+                    retailStores.forEach(store => {
+                        const option = document.createElement('option');
+                        option.value = store.location_id;
+                        option.textContent = store.location_name;
+                        selectStoreDropdown.appendChild(option);
+                    });
 
-            //     // Populate 'Upcoming Deliveries' table
-            //     // const upcomingDeliveries = await api.fetchUpcomingDeliveriesForStore(storeId);
-            //     // const deliveriesTable = createTable(deliveryHeaders, upcomingDeliveries, 'upcomingDeliveriesTable');
-            //     // document.getElementById('upcomingDeliveriesTableContainer').innerHTML = '';
-            //     // document.getElementById('upcomingDeliveriesTableContainer').appendChild(deliveriesTable);
-            // }
+                    selectStoreDropdown.addEventListener('change', async (event) => {
+                        const selectedStoreId = event.target.value;
+                        if (selectedStoreId) {
+                            await loadStoreDashboard(selectedStoreId);
+                        } else {
+                            document.getElementById('dashboardContent').classList.add('d-none');
+                        }
+                    });
+                } catch (error) {
+                    console.error('Failed to load stores for dropdown:', error);
+                    document.getElementById('selectStore').innerHTML = '<option value="">Error loading stores</option>';
+                }
+            }
 
-            // async function populateStoreDropdown() {
-            //     try {
-            //         const locations = await api.fetchLocations();
-            //         const retailStores = locations.filter(loc => loc.location_type === 'Retail Store');
-            //         const selectStoreDropdown = document.getElementById('selectStore');
-            //         selectStoreDropdown.innerHTML = '<option value="">Select Your Store</option>'; // Reset dropdown
-            //         retailStores.forEach(store => {
-            //             const option = document.createElement('option');
-            //             option.value = store.location_id;
-            //             option.textContent = store.location_name;
-            //             selectStoreDropdown.appendChild(option);
-            //         });
-
-            //         selectStoreDropdown.addEventListener('change', (event) => {
-            //             const selectedStoreId = event.target.value;
-            //             if (selectedStoreId) {
-            //                 loadStoreDashboard(selectedStoreId);
-            //             } else {
-            //                 document.getElementById('dashboardContent').classList.add('d-none'); // Hide if no store selected
-            //             }
-            //         });
-            //     } catch (error) {
-            //         console.error("Failed to load stores for dropdown:", error);
-            //         document.getElementById('selectStore').innerHTML = '<option value="">Error loading stores</option>';
-            //     }
-            // }
-            // populateStoreDropdown();
+            populateStoreDropdown();
         });
     </script>
 </body>
