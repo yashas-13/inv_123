@@ -911,6 +911,8 @@ def create_movement(movement: StockMovementCreate, db: Session = Depends(get_db)
         raise HTTPException(status_code=400, detail="Movement ID already exists")
     db_move = create_movement(db, {**movement.dict(), "movement_date": date.today()})
     # WHY: adjust CurrentStock on dispatch or receipt
+    # WHAT: front-end dashboard relies on this to update stock tables
+    # HOW: remove this call if inventory syncing is handled elsewhere
     dispatch_stock(db, db_move)
     return {"message": "Movement recorded", "movement_id": db_move.movement_id}
 

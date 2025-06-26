@@ -1,7 +1,7 @@
 # Arivu Foods Inventory System
 
 
-Version: 0.9.0
+Version: 0.9.1
 
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
@@ -45,6 +45,7 @@ This repository contains initial scripts to set up the inventory database and a 
 - **New:** `products.html` embedded in `arivu_Dashboard.html` showing product table
 - **Changed:** Batches now support multiple products via new `batch_products` table and auto-calculate expiry 90 days from manufacturing
 - **New:** `/warehouse-stock/summary` endpoint shows total quantity per product in the main warehouse
+- **Updated:** Dispatch dropdown now refreshes after creating or sending a batch to keep forms in sync
 =======
 
 ## Quick Start
@@ -217,4 +218,4 @@ curl http://localhost:8000/products.html
 ```
 
 ## Project Status
-Version 0.9.0 adds a CSV sync utility. Run `python main.py init-db` to recreate the database, `python main.py sync-products` whenever `products.csv` changes, then start the server with `uvicorn main:app --reload`.
+Version 0.9.1 improves dashboard sync. Run `python main.py init-db` to recreate the database, `python main.py sync-products` whenever `products.csv` changes, then start the server with `uvicorn main:app --reload`.
