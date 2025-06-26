@@ -109,12 +109,15 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <!-- Custom JavaScript for this page (would be handled by main.js/components.js) -->
     <script>
+        const API_KEY = 'changeme';
         document.addEventListener('DOMContentLoaded', () => {
             console.log("Arivu Foods Dashboard loaded.");
             // WHY: load aggregate dashboard data from new API (Closes: #6)
             async function loadDashboard() {
                 try {
-                    const resp = await fetch('http://localhost:8000/dashboard/arivu');
+                    const resp = await fetch('http://localhost:8000/dashboard/arivu', {
+                        headers: {'X-API-Key': API_KEY}
+                    });
                     const data = await resp.json();
                     document.getElementById('totalProductsCount').textContent = data.total_products;
                     document.getElementById('mainWarehouseStock').textContent = data.warehouse_stock;
@@ -128,7 +131,9 @@
             async function loadRecentSales() {
                 // WHY: show recent sales data using new API (Closes: #7)
                 try {
-                    const resp = await fetch('http://localhost:8000/dashboard/recent-sales');
+                    const resp = await fetch('http://localhost:8000/dashboard/recent-sales', {
+                        headers: {'X-API-Key': API_KEY}
+                    });
                     const sales = await resp.json();
                     const count = sales.reduce((sum, s) => sum + s.quantity_sold, 0);
                     document.getElementById('recentSalesCount').textContent = count;

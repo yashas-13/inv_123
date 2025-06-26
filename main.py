@@ -7,6 +7,7 @@ Closes: #2.
 """
 
 from fastapi import FastAPI, Depends, HTTPException
+from auth import verify_api_key  # ensure every request carries valid API key
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -34,7 +35,11 @@ from datetime import date, timedelta
 # Create tables if not already present (initial migration)
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Arivu Foods Inventory API")
+# WHY: enforce simple API key authentication across all endpoints (Closes: #8)
+app = FastAPI(
+    title="Arivu Foods Inventory API",
+    dependencies=[Depends(verify_api_key)],
+)
 
 
 class ProductCreate(BaseModel):

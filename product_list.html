@@ -112,9 +112,12 @@
         // WHAT: fetches /products endpoint and renders into table
         // HOW: call fetchProducts() on page load; remove or modify to roll back
         // Closes: #2
+        const API_KEY = 'changeme'; // simple header auth shared with backend
         document.addEventListener('DOMContentLoaded', () => {
             async function loadProducts() {
-                const response = await fetch('http://localhost:8000/products');
+                const response = await fetch('http://localhost:8000/products', {
+                    headers: {'X-API-Key': API_KEY}
+                });
                 const products = await response.json();
                 const tbody = document.getElementById('productListTableBody');
                 tbody.innerHTML = '';
@@ -130,7 +133,9 @@
 
             // WHY: display existing batches via new API (Closes: #4)
             async function loadBatches() {
-                const response = await fetch('http://localhost:8000/batches');
+                const response = await fetch('http://localhost:8000/batches', {
+                    headers: {'X-API-Key': API_KEY}
+                });
                 const batches = await response.json();
                 const tbody = document.getElementById('batchListTableBody');
                 tbody.innerHTML = '';
@@ -159,7 +164,10 @@
                 };
                 await fetch('http://localhost:8000/products', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': API_KEY
+                    },
                     body: JSON.stringify(product)
                 });
                 form.reset();
