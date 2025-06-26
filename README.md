@@ -1,6 +1,6 @@
 # Arivu Foods Inventory System
 
-Version: 0.5.3
+Version: 0.6.0
 
 This repository contains initial scripts to set up the inventory database and a basic FastAPI backend.
 
@@ -24,12 +24,19 @@ This repository contains initial scripts to set up the inventory database and a 
 - **New:** `users` table added to schema and init scripts
 - **New:** `/register` and `/login` API endpoints with `login.html` and `register.html`
 - **Updated:** store dashboard auto-loads when `store_id` query parameter is present
+- **New:** current stock now updates automatically when batches are created or dispatched
+- **New:** `/retail-sales` endpoint records store sales and adjusts stock
+- **New:** detailed store dashboard endpoints `/dashboard/store/{id}/stock` and `/dashboard/store/{id}/deliveries`
+- **New:** `/retail-partners` API for listing and creating partners
+- **Changed:** HTML pages load API key from `localStorage`
+- **Removed:** legacy `sqlscema.md` file
 
 ## Quick Start
-1. Install dependencies: `pip install fastapi uvicorn sqlalchemy`
+1. Install dependencies: `pip install -r requirements.txt`
 2. Run `python init_db.py` to (re)create `arivu_foods_inventory.db` with all tables.
 3. Set `API_KEY` environment variable (default `changeme`) and start server: `uvicorn main:app --reload` (set `DATABASE_URL` as needed)
-4. Open `login.html` in your browser to sign in (or register first).
+4. In your browser console run `localStorage.setItem('api_key','<API_KEY>')` to authenticate frontend pages.
+5. Open `login.html` in your browser to sign in (or register first).
 
 ## API Example
 Fetch products via cURL:
@@ -96,5 +103,32 @@ Fetch recent sales via cURL:
 curl -H 'X-API-Key: <API_KEY>' http://localhost:8000/dashboard/recent-sales
 ```
 
+Record a sale via cURL:
+
+```bash
+curl -X POST http://localhost:8000/retail-sales \
+     -H 'Content-Type: application/json' \
+     -H 'X-API-Key: <API_KEY>' \
+     -d '{"sale_id":"S1","sale_date":"2024-01-01","store_id":"STORE1","product_id":"AFCMA1KG","quantity_sold":5}'
+```
+
+Fetch store stock via cURL:
+
+```bash
+curl -H 'X-API-Key: <API_KEY>' http://localhost:8000/dashboard/store/STORE1/stock
+```
+
+Fetch upcoming deliveries via cURL:
+
+```bash
+curl -H 'X-API-Key: <API_KEY>' http://localhost:8000/dashboard/store/STORE1/deliveries
+```
+
+Fetch retail partners via cURL:
+
+```bash
+curl -H 'X-API-Key: <API_KEY>' http://localhost:8000/retail-partners
+```
+
 ## Project Status
-Version 0.5.3 adds user accounts with login and registration pages. Run `python init_db.py` after pulling to create the new users table.
+Version 0.6.0 introduces inventory synchronization, retail partner management and sales tracking. Run `python init_db.py` to create or update tables before starting the server.
