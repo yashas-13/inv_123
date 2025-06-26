@@ -103,6 +103,28 @@
         </div>
         <small class="text-muted mt-2">Last 5 sales records from retail partners.</small>
 
+        <!-- WHY: allow adding new batches from dashboard (Closes: #14) -->
+        <h3 class="mt-5 mb-3 text-secondary"><i class="bi bi-boxes me-2"></i>Warehouse Stock Inventory</h3>
+        <div id="warehouseStockTableContainer" class="table-responsive mb-3">
+            <div class="text-center p-5">
+                <div class="spinner-border text-secondary" role="status">
+                    <span class="visually-hidden">Loading warehouse stock...</span>
+                </div>
+            </div>
+        </div>
+        <form id="batchForm" class="row g-2 mb-4">
+            <div class="col-md-2"><input type="text" class="form-control" id="batchIdInput" placeholder="Batch ID" required></div>
+            <div class="col-md-2">
+                <select class="form-select" id="batchProduct" required>
+                    <option value="">Select Product</option>
+                </select>
+            </div>
+            <div class="col-md-2"><input type="date" class="form-control" id="manufacturedDate" required></div>
+            <div class="col-md-2"><input type="number" class="form-control" id="batchQty" placeholder="Qty" required></div>
+            <div class="col-md-2"><input type="date" class="form-control" id="expiryDate"></div>
+            <div class="col-md-2"><button class="btn btn-primary w-100" type="submit">Add Batch</button></div>
+        </form>
+
         <h3 class="mt-5 mb-3 text-secondary"><i class="bi bi-people-fill me-2"></i>Retail Partners</h3>
         <div id="partnersTableContainer" class="table-responsive mb-3"></div>
         <form id="partnerForm" class="row g-2">
@@ -193,6 +215,58 @@
                 container.appendChild(table);
             }
 
+            async function loadWarehouseStock() {
+                const resp = await fetch('/warehouse-stock', {
+                    headers: authHeaders()
+                });
+                const stock = await resp.json();
+                const container = document.getElementById('warehouseStockTableContainer');
+                const table = document.createElement('table');
+                table.className = 'table table-striped';
+                table.innerHTML = `<thead><tr><th>Product</th><th>Batch</th><th>Qty</th></tr></thead><tbody></tbody>`;
+                const tbody = table.querySelector('tbody');
+                stock.forEach(s => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${s.product_id}</td><td>${s.batch_id}</td><td>${s.quantity}</td>`;
+                    tbody.appendChild(tr);
+                });
+                container.innerHTML = '';
+                container.appendChild(table);
+            }
+
+            async function populateProductDropdown() {
+                const resp = await fetch('/products', { headers: authHeaders() });
+                const products = await resp.json();
+                const select = document.getElementById('batchProduct');
+                select.innerHTML = '<option value="">Select Product</option>';
+                products.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.product_id;
+                    opt.textContent = p.product_name;
+                    select.appendChild(opt);
+                });
+            }
+
+            const batchForm = document.getElementById('batchForm');
+            batchForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const batch = {
+                    batch_id: document.getElementById('batchIdInput').value,
+                    product_id: document.getElementById('batchProduct').value,
+                    date_manufactured: document.getElementById('manufacturedDate').value,
+                    quantity_produced: parseInt(document.getElementById('batchQty').value),
+                    expiry_date: document.getElementById('expiryDate').value || null
+                };
+                await fetch('/batches', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', ...authHeaders()},
+                    body: JSON.stringify(batch)
+                });
+                batchForm.reset();
+                loadWarehouseStock();
+                loadDashboard();
+            });
+
             const partnerForm = document.getElementById('partnerForm');
             partnerForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -218,6 +292,8 @@
             loadDashboard();
             loadRecentSales();
             loadRetailPartners();
+            loadWarehouseStock();
+            populateProductDropdown();
         });
     </script>
 </body>

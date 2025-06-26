@@ -97,6 +97,20 @@ def get_recent_movements(db: Session, limit: int = 5):
     return db.query(StockMovement).order_by(StockMovement.movement_date.desc()).limit(limit).all()
 
 
+def get_warehouse_stock(db: Session, warehouse_id: str = "MAIN_WH"):
+    """Return current stock for the given warehouse location.
+
+    WHY: display detailed inventory on Arivu dashboard (Closes: #14)
+    WHAT: query CurrentStock filtered by location_id
+    HOW: change warehouse_id or remove endpoint to roll back
+    """
+    return (
+        db.query(CurrentStock)
+        .filter(CurrentStock.location_id == warehouse_id)
+        .all()
+    )
+
+
 def get_store_current_stock(db: Session, store_id: str) -> int:
     """Sum current stock for a store by resolving its location."""
     partner = db.query(RetailPartner).filter(RetailPartner.store_id == store_id).first()
